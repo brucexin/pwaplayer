@@ -1,0 +1,123 @@
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+}
+
+.hide {
+    display: none;
+}
+
+.mainContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.originVideoContainer {
+    /* display:none;  */
+    /* position:absolute;  */
+    top:0px; 
+    left:0px;
+    width: 100%;
+    height: auto;
+}
+
+.originVideo {
+    /* object-fit: contain; */
+    /* width: 100%; */
+    /* height: auto; */
+    width: 480px;
+    height: 240px;
+}
+.playerContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.videoMainControls {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    flex-direction: row;
+}
+
+.videoFileOpenControl {
+    display:none;
+}
+.videoMainLargeControl {
+    /* background-color: transparent;  */
+    top: 0px;
+    left: 0px;
+    width:"auto";
+    height:"10vh";
+    fill:"currentColor";
+}
+
+.videoMainSmallButton {
+    background-color: transparent; 
+    border:0px;
+    top: 0px;
+    left: 0px;
+    width:"auto";
+    height:"5vh";
+    fill:"currentColor";
+}
+
+.videoControlSVG {
+    stroke:goldenrod
+}
+
+.videoContainer {
+    width: 100%;
+    height: 100%;
+    border: solid 1px #0e0;
+}
+
+.videoToolbar {
+    position:absolute;
+    bottom: 0px;
+    border: solid 1px green;
+    --toolbarHeight: 10vh;
+    height: var(--toolbarHeight);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.videoProgressBar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 3vh;
+    width: 100%;
+}
+
+.videoProgressLine {
+    stroke:rgba(127,127,127,0.5);
+    stroke-width:0.5vh;
+}
+.videoProgressSeeker {
+    position:absolute;
+    top: 0px;
+    left: 0px;
+    height: 2vh;
+    width: 1vw;
+}
+
+.videoProgressSeekerRect {
+    fill: rgba(64,64,64,0.5)
+}
+
+
+

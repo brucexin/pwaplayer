@@ -1,0 +1,19 @@
+{
+  "short_name": "PWAPlayer",
+  "name": "PWAPlayer",
+  "description": "A html video player package to PWA",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "./images/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+    
+  ],
+  "background_color": "#EEE",
+  "theme_color": "#1565c0",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "any"
+}
