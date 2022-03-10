@@ -19,7 +19,6 @@
 <div class="mainContainer">
   <div id="message"></div>
 	<div id="divOrigin" class="originVideoContainer">
-    <h3>Remote stream</h3>
     <video id="videoOrion" controls="true" autoplay="true" crossorigin="anonymous" class="originVideo">
     </video>
   </div>
@@ -45,20 +44,25 @@
     <canvas id="canvasPicture" class="videoContainer"></canvas>
     
     <div id="divToolbar" class="videoToolbar">
-      <div id="divProgress" class="videoProgressBar">
+      <!-- <div id="divProgress" class="videoProgressBar">
         <svg height="0.5vh" width="100%"><line x1="0" y1="50%" x2="100%" y2="50%" class="videoProgressLine"></svg>
       </div>
       <div id="iProgressIndicator" class="videoProgressSeeker">
         <svg height="100%" width="100%"><rect x="0" y="0" width="100%" height="100%" class="videoProgressSeekerRect"></rect> </svg>
 
-      </div>
+      </div> -->
+      <meter id="divProgress" class="videoProgressBar" min="0" max="0" value="0"></meter>
       <div id="divProgressTiming">
-        <lable>00:00:00/00:00:00</lable>
+        <lable id="labelCurrTime">00:00:00</lable>/<label id="labelTotalTime">00:00:00</label>
       </div>
       <!-- <div>
         <svg width="1vw" height="100%"><circle cx="0" cy="0" r="2px" fill="pink"></circle></svg>      
       </div> -->
         <!-- </input> -->
+
+    <label id="divPopPlayTime" class="popPlayTime">
+      00:00:00
+    </label>
        
     <!-- </div> -->
     <div class="toolbar">

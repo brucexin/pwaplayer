@@ -8,7 +8,7 @@ class OriginVideoCtrl {
       this.video.addEventListener("loadedmetadata", (e) => {
         self.width = self.video.videoWidth;
         self.height = self.video.videoHeight;
-        self.ratio = self.width/self.height;
+        self.ratio = self.height/self.width;
         if(self.loadedCB) {
           self.loadedCB();
         }
@@ -80,6 +80,21 @@ class OriginVideoCtrl {
 
 // };
 
+function secondsToHMS(secs) {
+  let h = secs/3600;
+  let m = 0;
+  let s = 0;
+  if(!Number.isInteger(h)) {
+    m = (secs%3600)/60;
+    if(!Number.isInteger(m)) {
+      s = (secs%3600)%60;
+      m = Math.floor(m);
+    }
+    h = Math.floor(h);
+  }
+  return `${h}`.padStart(2, '0')+':'+`${m}`.padStart(2, '0')+':'+`${s}`.padStart(2, '0');
+}
+
 var processor = {
     timerCallback: function() {
       if (this.originVideoCtrl.paused || this.originVideoCtrl.ended) {
@@ -95,6 +110,44 @@ var processor = {
       }, 16); // roughly 60 frames per second
     },
 
+    progressTimerCallback: function() {
+      let playedSecs = Math.ceil(this.originVideoCtrl.video.currentTime);
+      let durationSecs = Math.ceil(this.originVideoCtrl.video.duration);
+      // console.log(`progress ${playedSecs}/${durationSecs}`);
+      let currTimeStr = secondsToHMS(playedSecs);
+      let totalTimeStr = secondsToHMS(durationSecs);
+      this.currTimeCtrl.innerHTML = currTimeStr;
+      this.totalTimeCtrl.innerHTML = totalTimeStr;
+      this.progressCtrl.value = `${playedSecs}`;
+      var self = this;
+      setTimeout(function () {
+        self.progressTimerCallback();
+      }, 1000); // update progress per second
+    },
+    hoverProgressCtr: function(evt) {
+      let durationSecs = Math.ceil(this.originVideoCtrl.video.duration);
+      let maxVal = this.progressCtrl.clientWidth;
+      let pointedTime = Math.round(durationSecs*(evt.offsetX/maxVal));
+      let timestr = secondsToHMS(pointedTime);
+      let rect = this.progressCtrl.getBoundingClientRect();
+      console.log(`rect ${rect.top} ${rect.left}, time ${pointedTime}/${durationSecs}`);
+      let timeLabel = document.getElementById('divPopPlayTime');
+      let timeLabelRect = timeLabel.getBoundingClientRect();
+      console.log(`rect ${timeLabelRect.x} ${timeLabelRect.y} ${timeLabelRect.width} ${timeLabelRect.height}`);
+      timeLabel.style.left = evt.x + "px";
+      timeLabel.style.top = (rect.top - timeLabelRect.height) + "px";
+      timeLabel.innerHTML = timestr;
+      //timeLabel.style.display = "inline" ;
+      //timeLabel.style.position = "absolute";
+      timeLabel.style.visibility = 'visible';
+
+    },
+    endHoverProgressCtr : function(evt) {
+      let timeLabel = document.getElementById('divPopPlayTime');
+      //timeLabel.style.display = 'none';
+      timeLabel.style.visibility = 'hidden';
+    },
+
     displayMessage : function (message, isError) {
       // console.log(message);
       var element = document.querySelector('#message')
@@ -107,36 +160,76 @@ var processor = {
       this.mainContainer = document.getElementById("divHandled");
       this.c1 = document.getElementById("canvasPicture");
       this.ctx1 = this.c1.getContext("2d");
+      this.ctx1.scale(1,1);
       this.vdiv = document.getElementById("divOrigin");
       this.mode = "vr";
-      //this.mode = "normal";
+
+      this.toolbarCtrl = document.getElementById("divToolbar");
+      this.progressCtrl = document.getElementById("divProgress");
+      this.totalTimeCtrl = document.getElementById("labelTotalTime");
+      this.currTimeCtrl = document.getElementById("labelCurrTime");
+      this.mode = "normal";
       var self = this;
 
       this.openDiv = document.getElementById("divVideoOpen");
       var fileOpenBtn = document.getElementById("btnOpen");
       var fileOpenInput = document.getElementById("fileVideoOpen");
+      var playBtn = document.getElementById("btnPlay");
+      var pauseBtn = document.getElementById("btnPause");
       fileOpenBtn.addEventListener("click", (e) => {
         fileOpenInput.click();
       }, false);
+
+      window.onresize = (evt) => {
+        self.fitCanvasSize();
+      };
   
       this.originVideoCtrl.onloaded(() => {
         console.log(`originVideoCtrl fired onloaded ${this.originVideoCtrl.width}`);
         this.originVideoCtrl.onplay(function() {
-          console.log(`video width:${self.originVideoCtrl.width}`);
+          console.log(`video size:${self.originVideoCtrl.width},${self.originVideoCtrl.height} ratio: ${self.originVideoCtrl.ratio}`);
           console.log(`video canvas width:${self.c1.width}`);
           self.fitCanvasSize(self.originVideoCtrl.ratio, self.c1);
+          console.log(`canvas:${self.c1.clientWidth} ${self.c1.clientHeight}`);
+          self.progressCtrl.max = Math.round(self.originVideoCtrl.video.duration);
+          self.progressCtrl.addEventListener('mousemove', (evt) => {
+            self.hoverProgressCtr(evt);
+          });
+          self.progressCtrl.addEventListener('mouseleave', (evt) => {
+            self.endHoverProgressCtr(evt);
+          });
+          self.progressTimerCallback();
+          
           self.timerCallback();
-          self.openDiv.style.display = "none";
+          // self.openDiv.style.display = "none";
+          self.openDiv.style.visibility = "hidden";
+          self.toolbarCtrl.style.visibility = "hidden";
+          
+          self.toolbarCtrl.addEventListener('mouseleave', () => {
+            self.toolbarCtrl.style.visibility = "hidden";
+            self.openDiv.style.visibility = "hidden";
+          });
+          self.c1.addEventListener('click', (evt) => {
+            if(self.toolbarCtrl.style.visibility == "visible") {
+              self.openDiv.style.visibility = "hidden";
+              self.toolbarCtrl.style.visibility = "hidden";
+            } else {
+              self.openDiv.style.visibility = "visible";
+              self.toolbarCtrl.style.visibility = "visible";
+            }
+          });
         });
       });
       
     },
 
     fitCanvasSize: function(ratio, canvasCtrl) {
+      console.log(`canvas size of style: ${canvasCtrl.style.width} ${canvasCtrl.style.height}`);
       let width = canvasCtrl.clientWidth;
-      let height = width/ratio;
+      let height = width*ratio;
       canvasCtrl.width = width;
       canvasCtrl.height = height;
+      canvasCtrl.style.height = (ratio*100) + 'vw';
     },
 
     computeFrame: function() {
@@ -163,9 +256,9 @@ var processor = {
     },
   
     computeFrame1: function() {
-      let imgWidth = this.c1.clientWidth;
-      let imgHeight = imgWidth/this.originVideoCtrl.ratio;
-      this.displayMessage(`img width:${imgWidth}, height ${imgHeight}`);
+      let imgWidth = this.c1.width;
+      let imgHeight = imgWidth*this.originVideoCtrl.ratio;
+      
       if(this.mode == "vr") {
         imgWidth /= 2;
         imgHeight /= 2;
@@ -174,8 +267,14 @@ var processor = {
           resizeHeight: imgHeight,
           resizeQuality: 'high'
         }).then((img) => {
+          this.displayMessage(`img width:${img.width}, height ${img.height}, \
+        canvas width: ${this.c1.width}, height ${this.c1.height}`);
             this.ctx1.drawImage(img, 0, 0, img.width, img.height);
-            this.ctx1.drawImage(img, img.width, 0, img.width, img.height);
+            // this.ctx1.drawImage(img, img.width, 0, img.width, img.height);
+            this.ctx1.rect(0, 0, img.width, img.height+10);
+            this.ctx1.rect(img.width, 0, img.width, img.height+10);
+            this.ctx1.lineWidth = 5;
+            this.ctx1.stroke();
         });
       } else {
           this.ctx1.drawImage(this.originVideoCtrl.video, 0, 0, imgWidth, imgHeight);

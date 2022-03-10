@@ -5,9 +5,9 @@ var localFileVideoPlayer = function () {
 	'use strict'
   var URL = window.URL || window.webkitURL;
   var displayMessage = function (message, isError) {
-    var element = document.querySelector('#message')
-    element.innerHTML = message
-    element.className = isError ? 'error' : 'info'
+    // var element = document.querySelector('#message')
+    // element.innerHTML = message
+    // element.className = isError ? 'error' : 'info'
   };
   var playSelectedFile = function (event) {
     var file = this.files[0];
