@@ -20,46 +20,77 @@ body {
 }
 
 .originVideoContainer {
-    /* display:none;  */
+    display:flex; 
     /* position:absolute;  */
     top:0px; 
     left:0px;
     width: 100%;
     height: auto;
+    background-color: gray;
 }
 
 .originVideo {
     /* object-fit: contain; */
-    /* width: 100%; */
-    /* height: auto; */
-    width: 263px;
-    height: 191px;
-}
-.playerContainer {
     width: 100%;
-    display: flex;
+    height: 59.25vw; /* 16:9 */
+}
+
+.sbsVideoContainer {
+    display:flex; 
+    /* position:absolute;  */
+    top:0px; 
+    left:0px;
+    width: 100%;
+    height: auto;
+    background-color: white;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
-    position: relative;
+}
+
+.sbsVideo {
+    width: 50%;
+    height: 28.125vw;
+}
+.sbsLeft {
+    background-color: rgba(255,0,0,0.5);
+}
+.sbsRight {
+    background-color: rgba(0,0,255,0.5);
+}
+
+
+.playerContainer {
+    width: 100%;
+    /* height: 100%; */
+    display:flex;
+    justify-content: center;
+    align-items:center;
+    flex-direction: column;
+    position: absolute;
 }
 
 .videoMainControls {
     position: absolute;
+    top: 0;
+    left: 0;
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    align-items:flex-start;
     flex-direction: row;
+    width:100%;
+    height:100%;
 }
 
 .videoFileOpenControl {
     display:none;
 }
 .videoMainLargeControl {
-    background-color: rgba(192,192,192,0.5);
+    background-color: rgba(224,224,192,0.3);
     top: 0px;
     left: 0px;
-    width:"auto";
-    height:"10vh";
+    width:100%;
+    height:80%;
     fill:"currentColor";
 }
 
@@ -69,7 +100,7 @@ body {
     top: 0px;
     left: 0px;
     width:"auto";
-    height:"5vh";
+    height:5vh;
     fill:"currentColor";
 }
 
@@ -86,21 +117,23 @@ body {
 .videoToolbar {
     position:absolute;
     bottom: 0px;
-    border: solid 1px green;
+    /* border: solid 1px green; */
     --toolbarHeight: 10vh;
     height: var(--toolbarHeight);
+    width: 90%;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    background-color: rgba(192,192,192,0.5);
+    /* background-color: rgba(192,192,192,0.5); */
+    /* visibility: hidden; */
 }
 
 .videoProgressBar {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 3vh;
+    height: 1em;
     width: 100%;
 }
 
@@ -126,5 +159,29 @@ body {
      /* display:none; */
 }
 
+.volumeBar {
+    position:absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+.SBSViewCtrl {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    bottom:0px;
+    left:0px;
+    height: 3em;
+}
+
+.SBSViewCtrl-label {
+    display: block;
+}
+
+/* below style code reference from: https://www.smashingmagazine.com/2021/12/create-custom-range-input-consistent-browsers */
+.SBSViewSlider {
+    background: transparent;
+    width: 9vw;
+}
 
 
