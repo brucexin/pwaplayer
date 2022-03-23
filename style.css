@@ -184,4 +184,17 @@ body {
     width: 9vw;
 }
 
+.VideoURLContainer {
+    position:fixed;
+    visibility: hidden;
+    /* top: 0px;
+    left:0px; */
+    width: 100%;
+    height: auto;
+}
+
+.VideoURL {
+    width: 100%;
+}
+
 

@@ -1,3 +1,5 @@
+var URL = window.URL || window.webkitURL;
+
 class PWAVideoCtrl {
     constructor(video) {
       this._video = video;
@@ -134,11 +136,22 @@ class PWASBSVideoCtrl {
     });
 
     this._videoLeft.addEventListener("ended", (e) => {
+      console.log('play ended');
       this._clearFrameCheckTimer();
     });
 
     this._videoRight.addEventListener("loadedmetadata", (e) => {
       console.log(`loadedmetadata right ${self._videoRight.videoWidth}`);
+    });
+
+    this._videoLeft.addEventListener("canplaythrough", (e) => {
+      console.log('left canplaythrough');
+      console.log('left buffered ', this._videoLeft.buffered.start(0), this._videoLeft.buffered.end(0));
+    });
+
+    this._videoRight.addEventListener("canplaythrough", (e) => {
+      console.log('right canplaythrough');
+      console.log('right buffered ', this._videoRight.buffered.length);
     });
     
     this._videoLeft.requestVideoFrameCallback((time, metadata) => {
@@ -172,18 +185,30 @@ class PWASBSVideoCtrl {
 
   _startFrameCheckTimer() {
     if(!this._frameCheckTimer) {
-      this._frameCheckTimer = setInterval(() => {
-        if(this._mediaTimeLeft != this._mediaTimeRight) {
-          console.log(`SBS mismatch: ${this._mediaTimeLeft} != ${this._mediaTimeRight}`);
+      // this._frameCheckTimer = setInterval(() => {
+      //   if(this._mediaTimeLeft != this._mediaTimeRight) {
+      //     console.log(`SBS mismatch: ${this._mediaTimeLeft} != ${this._mediaTimeRight}`);
+      //     this.onRequestAnimate();
+      //   }
+      // }, 10);
+      this._frameCheckTimer = true;
+      var loop = () => {
+        if(this._frameCheckTimer) {
+          requestAnimationFrame(() => {
+            this.onRequestAnimate();
+            loop();
+          });
         }
-      }, 10);
+      };
+      loop();
     }
   }
 
   _clearFrameCheckTimer() {
     if(this._frameCheckTimer) {
-      clearInterval(this._frameCheckTimer);
+      // clearInterval(this._frameCheckTimer);
       this._frameCheckTimer = null;
+      console.log('SBS play stats:', JSON.stringify(this.stats));
     }
   }
 
@@ -284,13 +309,14 @@ class PWASBSVideoCtrl {
     this._videoRight.src = fileURL;
     this._videoLeft.play();
     this._videoRight.play();
+    this.stats = {'missLeft':0,'missRight':0};
     this._startFrameCheckTimer();
     return true;
   }
 
   playSource(src, playAtTime) {
     this._videoLeft.src = src;
-    this._videoRight.src = src;
+    this._videoRight.src = this._videoLeft.src;
     if(playAtTime) {
       this._videoLeft.currentTime = playAtTime;
       this._videoRight.currentTime = playAtTime;
@@ -337,6 +363,24 @@ class PWASBSVideoCtrl {
 
     // this._vttTrackLeft.src = fileURL;
     // this._vttTrackRight.src = fileURL;
+  }
+
+  onRequestAnimate() {
+    // let time = performance.now()/1000;
+    // this._videoLeft.currentTime = time;
+    // this._videoRight.currentTime = time;
+    if(!this._videoLeft.played || !this._videoRight.played) {
+      return;
+    }
+    if(this._videoLeft.currentTime > this._videoRight.currentTime) {
+      this._videoRight.currentTime = this._videoLeft.currentTime;
+      this.stats.missRight += 1;
+      
+    } else if(this._videoLeft.currentTime < this._videoRight.currentTime) {
+      this._videoLeft.currentTime = this._videoRight.currentTime;
+      this._stats.missLeft += 1;
+    }
+
   }
 
 };
@@ -486,6 +530,8 @@ function secondsToHMS(secs) {
 
 const MODE_NORMAL = Symbol("normal")
 const MODE_SBS = Symbol("sbs");
+const SRC_TYPE_FILE = Symbol("file source");
+const SRC_TYPE_URL = Symbol("URL source");
 var processor = {
     timerCallback: function() {
       if (this.videoCtrl.paused || this.videoCtrl.ended) {
@@ -631,6 +677,7 @@ var processor = {
       this.src = null;
       // this.mainContainer = document.getElementById("divHandled");
      
+      this.playerContainer = document.getElementById("divPlayer");
       this.normalPlayerUI = new PWAPlayerUI("divOrigin", "videoOrion");
       this.sbsPlayerUI = new PWASBSPlayerUI("divSBS", "videoLeft", "videoRight");
       this.mode = MODE_SBS;
@@ -646,6 +693,9 @@ var processor = {
       this.openDiv = document.getElementById("divVideoOpen");
       var fileOpenBtn = document.getElementById("btnOpen");
       var fileOpenInput = document.getElementById("fileVideoOpen");
+      var openRemoteBtn = document.getElementById("btnOpenRemote");
+      var videoURLContainer = document.getElementById("divVideoURL");
+      var videoURLInput = document.getElementById("inputVideoURL");
       var playBtn = document.getElementById("btnPlay");
       var pauseBtn = document.getElementById("btnPause");
       var restartBtn = document.getElementById("btnRestart");
@@ -666,10 +716,24 @@ var processor = {
       fileOpenInput.addEventListener('change', (evt) => {
         self.files = fileOpenInput.files;
         self.playSelectedFile(evt);
+        // self.playVideo(self.files, SRC_TYPE_FILE);
       }, false);
       fileOpenBtn.addEventListener("click", (e) => {
         fileOpenInput.click();
       }, false);
+      openRemoteBtn.addEventListener("click", (e) => {
+        var rect = this.playerContainer.getBoundingClientRect();
+        videoURLContainer.style.left = rect.left + "px";
+        videoURLContainer.style.top = rect.top + "px";
+        videoURLContainer.style.visibility = "visible";
+      });
+      videoURLInput.addEventListener("change", (evt) => {
+        videoURLContainer.style.visibility = "hidden";
+        self.playSource(evt.target.value, SRC_TYPE_URL);
+        // if(self.videoCtrl) {
+        //   self.videoCtrl.playSource(evt.target.value);
+        // }
+      });
       playBtn.addEventListener("click", () => {
         if(self.videoCtrl) {
           self.videoCtrl.play();
@@ -814,12 +878,72 @@ var processor = {
       return;
     },
 
+    fetchAB (url) {
+      console.log(url);
+      var xhr = new XMLHttpRequest();
+      xhr.open('get', url, true);
+      xhr.responseType = 'arraybuffer';
+      let self = this;
+      // xhr.onloadstart = function () {
+      //   self.onMediaLoadStart(xhr.response);
+      //   // cb(xhr.response);
+      // };
+      xhr.onerror = function() {
+        self.onMediaError(xhr.response);
+      }
+      xhr.onprogress = function() {
+        self.onMediaProgress(xhr.response);
+      }
+      xhr.onreadystatechange = function(e) {
+        if (this.readyState == 4 && (this.status >= 200 && this.status < 300) ) {
+          self.onMediaProgress(this.response);
+          
+        }
+      };
+      xhr.send();
+      this._xhr = xhr;
+    },
+    onMediaError(resp) {
+      console.log('media load error:', resp);
+      
+    },
+    onMediaProgress(buf) {
+      console.log('media load progress, buffer size ', buf.length);
+      this.mediaSourceBuffer.appendBuffer(buf);
+    },
+
+    requestMedia(file) {
+      console.log('request media');
+      if(this._xhr) {
+        this._xhr.abort();
+        this._xhr = null;
+      }
+      var file = this.files[0];
+      
+      var fileURL = URL.createObjectURL(file);
+      this.mediaSrc = new MediaSource();
+      let self = this;
+      this.mediaSrc.addEventListener('sourceopen', () => {
+        console.log("sourceopen");
+        var mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
+
+        self.mediaSourceBuffer = self.mediaSrc.addSourceBuffer(mimeCodec);
+        self.mediaSourceBuffer.mode = 'sequence';
+        
+        self.videoCtrl.playSource(URL.createObjectURL(self.mediaSrc));
+      });
+      self.fetchAB(fileURL);
+      // this.mediaSrc = mediaSrc;
+    },
+
     playSelectedFile(files) {
       if(this.files.length == 0) {
         return;
       }
-      var file = this.files[0];
+      
+      let file = this.files[0];
       if(this.videoCtrl.canPlay(file)) {
+        
         let self = this;
         this.videoCtrl.onplay((evt) => {
           self.handlePlay(evt);
@@ -828,10 +952,15 @@ var processor = {
           console.log('on loaded');
           self.handlePlay(evt);
         });
+        // this.requestMedia(file);
         this.videoCtrl.playLocalFile(file);
+        // this.videoCtrl.playSource(URL.createObjectURL(this.mediaSrc));
       } else {
         this.displayMessage(`Can't play video ${file}`);
       }
+    }, 
+    playVideo(src, type) {
+
     }
   }; /* end var processor */
    
