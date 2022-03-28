@@ -1,38 +1,9 @@
-
-// Basic service worker...
-self.addEventListener('fetch', (event) => {
- event.respondWith(caches.open('cache').then((cache) => {
-  return cache.match(event.request).then((response) => {
-   console.log("cache request: " + event.request.url);
-   const fetchPromise = fetch(event.request).then((networkResponse) => {
-   // If we got a response from the cache, update the cache...
-   console.log("fetch completed: " + event.request.url, networkResponse);
-   if (networkResponse) {
-    console.debug("updated cached page: " + event.request.url, networkResponse);
-    cache.put(event.request, networkResponse.clone());}
-   return networkResponse;
-  }, (event) => {
-  // Rejected promise - just ignore it, we're offline...
-  console.log("Error in fetch()", event);
-  event.waitUntil(
-   // Our 'cache' here is named *cache* in the caches.open()...
-   caches.open('cache').then((cache) => {
-    return cache.addAll
-      ([
-      // List : cache.addAll(), takes a list of URLs, then fetches them from...
-      // The server and adds the response to the cache...
-      './index.html', // cache your index page
-      './*.js', // cache app.main css
-      './app.webmanifest',
-      './images/*'
-     ]);
-    }) );
-   });
-   // Respond from the cache, or the network...
-   return response || fetchPromise;
- });
- }));
-});
+var CACHE_NAME = "PWAPLAYER_CACHE_V1";
+SITE_FILES = new Set(["/index.html"
+  , "/style.css"
+  // , "/service-worker.js"
+  , "/pwa.js"
+  , ]);
 
 // async function doRequest(cache, event) {
 //   let networkResponse = await fetch(event.request);
@@ -44,10 +15,10 @@ self.addEventListener('fetch', (event) => {
 //   return networkResponse;
 // }
 
-// async function onFetch(event) {
+// async function cacheFetch(event) {
 //   let cache = null;
 //   try {
-//     cache = await caches.open('cache');
+//     cache = await caches.open(CACHE_NAME);
 //   } catch(err) {
 //     console.log('open cache failed ', err);
 //     return err;
@@ -80,14 +51,50 @@ self.addEventListener('fetch', (event) => {
 //         ])
 //     );
 //   }
- 
 // }
-// self.addEventListener('fetch', (event) => {
-//   event.respondWith(onFetch(event));
-// });
 
-// // Always updating i.e latest version available...
-// self.addEventListener('install', (event) => {
-//    self.skipWaiting();
-//    console.log("Latest version installed!");
+// async function directFetch(event) {
+
+// }
+
+async function onFetch(event) {
+  console.log("onFetch ", JSON.stringify(event.request, null, '\t'));
+  const url = new URL(event.request.url);
+  const isCached = SITE_FILES.has(url.pathname);
+  if(isCached) {
+    let cache = await caches.open(CACHE_NAME);
+    return cache.match(event.request.url);
+  } else {
+    // default go to network
+    return;
+  }
+}
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(onFetch(event));
+});
+
+async function doInstall() {
+  try {
+    let cache = await caches.open(CACHE_NAME);
+    cache.addAll(SITE_FILES);
+    console.log("installed")
+  } catch(err) {
+    console.log("install error:", err);
+    throw err;
+  }
+}
+
+self.addEventListener('install', (event) => {
+   event.waitUntil(doInstall());
+   console.log("Latest version installed!");
+});
+
+// self.addEventListener('activate', (e) => {
+//   e.waitUntil(caches.keys().then((keyList) => {
+//     return Promise.all(keyList.map((key) => {
+//       if (key === CACHE_NAME) { return; }
+//       return caches.delete(key);
+//     }))
+//   }));
 // });

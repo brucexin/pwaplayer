@@ -112,19 +112,27 @@ class PWAVideoCtrl {
 };
 
 class PWASBSVideoCtrl {
+  MISSED_INTERVAL = 7.8;
   constructor(videoLeft, videoRight) {
     this._videoLeft = videoLeft;
     this._videoRight = videoRight;
-    // this._vttTrackLeft = this._getVTTElement(videoLeft);
-    // this._vttTrackLeft.mode = "hidden";
-    // this._vttTrackRight = this._getVTTElement(videoRight);
-    // this._vttTrackRight.mode = "hidden";
     this._mediaTimeLeft = null;
     this._mediaTimeRight = null;
     this.width = 0;
     this.height = 0;
     this.ratio = null;
+    this._listeners = {
+      "play": []
+    }
+    this._userPlayed = false;
+    this._userPaused = false;
     var self = this;
+
+    this._videoLeft.autoplay = false;
+    this._videoRight.autoplay = false;
+    this._videoLeft.preload = "auto";
+    this._videoRight.preload = "auto";
+
     this._videoLeft.addEventListener("loadedmetadata", (e) => {
       self.width = self._videoLeft.videoWidth;
       self.height = self._videoLeft.videoHeight;
@@ -143,16 +151,6 @@ class PWASBSVideoCtrl {
     this._videoRight.addEventListener("loadedmetadata", (e) => {
       console.log(`loadedmetadata right ${self._videoRight.videoWidth}`);
     });
-
-    this._videoLeft.addEventListener("canplaythrough", (e) => {
-      console.log('left canplaythrough');
-      console.log('left buffered ', this._videoLeft.buffered.start(0), this._videoLeft.buffered.end(0));
-    });
-
-    this._videoRight.addEventListener("canplaythrough", (e) => {
-      console.log('right canplaythrough');
-      console.log('right buffered ', this._videoRight.buffered.length);
-    });
     
     this._videoLeft.requestVideoFrameCallback((time, metadata) => {
         self._onFrameCallback(self._videoLeft, time, metadata);
@@ -161,18 +159,35 @@ class PWASBSVideoCtrl {
     this._videoRight.requestVideoFrameCallback((time, metadata) => {
       self._onFrameCallback(self._videoRight, time, metadata);
     });
-
-    // this._vttTrackLeft.addEventListener("load", () => {
-    //   console.log(`vttLeft loaded:${this.src}`);
-    //   this.mode = "showing";
-    // });
-
-    // this._vttTrackRight.addEventListener("load", () => {
-    //   console.log(`vttRight loaded:${this.src}`);
-    //   this.mode = "showing";
-    // });
    
+    this._videoLeft.addEventListener("ended", () => {
+      self._clearFrameCheckTimer();
+    });
+    this._videoLeft.addEventListener("play", () => {
+      var listeners = self._listeners["play"];
+      listeners.forEach(element => {
+        element();
+      });
+    });
+    this._playBegan = false;
+    this._videoLeft.addEventListener("loadeddata", () => {
+      self._playThrough();
+    });
+    this._videoRight.addEventListener("loadeddata", () => {
+      self._playThrough();
+    });
     
+  }
+
+  _playThrough() {
+    if(this._videoLeft.readyState >= 4 && 
+        this._videoRight.readyState >= 4 && 
+        !this._playBegan) {
+        console.log('begin play');
+        this._videoLeft.play();
+        this._videoRight.play();
+        this._playBegan = true;
+    }
   }
 
   _onFrameCallback(video, time, metadata) {
@@ -248,7 +263,8 @@ class PWASBSVideoCtrl {
     this.loadedCB = cb;
   }
   onplay(cb) {
-    this._videoLeft.addEventListener("play", cb, false);
+    this._listeners["play"].push(cb);
+    // this._videoLeft.addEventListener("play", cb, false);
   }
 
   get paused() {
@@ -307,10 +323,12 @@ class PWASBSVideoCtrl {
     var fileURL = URL.createObjectURL(file);
     this._videoLeft.src = fileURL;
     this._videoRight.src = fileURL;
-    this._videoLeft.play();
-    this._videoRight.play();
-    this.stats = {'missLeft':0,'missRight':0};
+    // this._videoLeft.play();
+    // this._videoRight.play();
+    this.stats = {'missed':0};
     this._startFrameCheckTimer();
+    this._userPlayed = true;
+    this._userPaused = false;
     return true;
   }
 
@@ -321,9 +339,12 @@ class PWASBSVideoCtrl {
       this._videoLeft.currentTime = playAtTime;
       this._videoRight.currentTime = playAtTime;
     }
-    this._videoLeft.play();
-    this._videoRight.play();
+    this.stats = {'missed':0};
+    // this._videoLeft.play();
+    // this._videoRight.play();
     this._startFrameCheckTimer();
+    this._userPlayed = true;
+    this._userPaused = false;
     return true;
   }
 
@@ -331,18 +352,24 @@ class PWASBSVideoCtrl {
     this._videoLeft.pause();
     this._videoRight.pause();
     this._clearFrameCheckTimer();
+    this._userPaused = true;
+    this._userPlayed = false;
   }
 
   play() {
     this._videoLeft.play();
     this._videoRight.play();
     this._startFrameCheckTimer();
+    this._userPlayed = true;
+    this._userPaused = false;
   }
 
   restart() {
     this._videoLeft.currentTime = 0;
     this._videoRight.currentTime = 0;
     this._startFrameCheckTimer();
+    this._userPlayed = true;
+    this._userPaused = false;
   }
 
   seekTo(newTime) {
@@ -357,29 +384,17 @@ class PWASBSVideoCtrl {
 
     this._createVTTElement(this._videoLeft, fileURL);
     this._createVTTElement(this._videoRight, fileURL);
-    
-    // this._videoLeft.appendChild(track);
-    // this._videoRight.appendChild(track);
-
-    // this._vttTrackLeft.src = fileURL;
-    // this._vttTrackRight.src = fileURL;
   }
 
   onRequestAnimate() {
-    // let time = performance.now()/1000;
-    // this._videoLeft.currentTime = time;
-    // this._videoRight.currentTime = time;
-    if(!this._videoLeft.played || !this._videoRight.played) {
+    if(!this._userPlayed) {
       return;
     }
-    if(this._videoLeft.currentTime > this._videoRight.currentTime) {
-      this._videoRight.currentTime = this._videoLeft.currentTime;
-      this.stats.missRight += 1;
-      
-    } else if(this._videoLeft.currentTime < this._videoRight.currentTime) {
-      this._videoLeft.currentTime = this._videoRight.currentTime;
-      this._stats.missLeft += 1;
-    }
+    let leftTime  = Math.round(this._videoLeft.currentTime*1000);
+    let rightTime  = Math.round(this._videoRight.currentTime*1000);
+    if(Math.abs(leftTime - rightTime) > this.MISSED_INTERVAL) {
+        console.log("play time miss match",leftTime, rightTime);
+    };
 
   }
 
@@ -729,7 +744,8 @@ var processor = {
       });
       videoURLInput.addEventListener("change", (evt) => {
         videoURLContainer.style.visibility = "hidden";
-        self.playSource(evt.target.value, SRC_TYPE_URL);
+        self.videoCtrl.playSource(evt.target.value);
+        //self.videoCtrl.playSource(evt.target.value, SRC_TYPE_URL);
         // if(self.videoCtrl) {
         //   self.videoCtrl.playSource(evt.target.value);
         // }
@@ -968,7 +984,20 @@ var processor = {
   document.addEventListener('DOMContentLoaded', (event) => {
     console.log('DOM loaded!');
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
+      console.log(window.location.href);
+      console.log('hash', window.location.hash);
+      // let url = new URL(window.location.href);
+      
+      // let qs = new URLSearchParams(window.location.search);
+      let swFile = null;
+      if(window.location.hash != '#debug') {
+        console.log('register release version')
+        swFile = '/service-worker.js';
+      } else {
+        console.log('register debug version')
+        swFile = '/debug-sw.js';
+      }
+      navigator.serviceWorker.register(swFile)
         .then((reg) => {
           console.log('Service worker registered -->', reg);
         }, (err) => {
