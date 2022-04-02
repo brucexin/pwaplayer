@@ -1,6 +1,7 @@
 import {addWord, removeWord, hasWord} from './lib/utils.js';
 import { SharePlaceGroup } from "./lib/ui_share_place.js";
 import {DOCK_TYPE, showPopup, hidePopup} from "./lib/ui_popup.js";
+import {PWAVideoCtrl, PWASBSVideoCtrl, VIDEOCTRL_ASPECT_RATIO_EVENT} from "./lib/video_ctrl.js"
 
 var URL = window.URL || window.webkitURL;
 
@@ -172,8 +173,8 @@ class PlayerUI extends Page {
             screen.orientation.unlock();
         }
         this.hideControls();
-        if(!this.video.ended) {
-            this.video.pause();
+        if(!this.videoCtrl.ended) {
+            this.videoCtrl.pause();
         }
     }
 
@@ -262,12 +263,12 @@ class PlayerUI extends Page {
 
         this.btnPlay.addEventListener('click', () => {
             this.spPlay.updateTo(this.btnPause);
-            this.video.play();
+            this.videoCtrl.play();
         })
 
         this.btnPause.addEventListener('click', () => {
             this.spPlay.updateTo(this.btnPlay);
-            this.video.pause();
+            this.videoCtrl.pause();
         })
 
         this.btnPlayRate = document.getElementById('btn-playrate');
@@ -291,13 +292,13 @@ class PlayerUI extends Page {
             });
         });
 
-        this.video.addEventListener('play', () => {
+        this.videoCtrl.addEventListener('play', () => {
             if(this.spPlay.currentElement != this.btnPause) {
                 this.spPlay.updateTo(this.btnPause);
             }
         })
 
-        this.video.addEventListener('pause', () => {
+        this.videoCtrl.addEventListener('pause', () => {
             if(this.spPlay.currentElement != this.btnPlay) {
                 this.spPlay.updateTo(this.btnPlay);
             }
@@ -329,7 +330,7 @@ class PlayerUI extends Page {
     }
 
     initVideo() {
-        this.video = document.getElementById('mainVideo');
+        this.videoCtrl = new PWAVideoCtrl(document.getElementById('mainVideo'));
         document.addEventListener(VIDEO_SOURCE_CHANGE_EVENT, (evt) => {
             console.log('receive video src event! ', evt);
             if(evt.detail.files) {
@@ -337,15 +338,13 @@ class PlayerUI extends Page {
                 console.log('src ', src);
                 if(src instanceof File) {
                     console.log('video src ', src.name, src.size);
-                    var fileURL = URL.createObjectURL(src);
-                    this.video.src = fileURL;
-                    this.video.play();
+                    this.videoCtrl.playLocalFile(src);
                 } else {
-                    throw new Error("video source is not a file!");
+                    this.videoCtrl.playSource(src);
                 }
             }
         });
-        this.video.addEventListener('click', () => {
+        this.videoCtrl.addEventListener('click', () => {
             if(this.controlsShowed) {
                 this.hideControls();
             } else {
@@ -353,6 +352,39 @@ class PlayerUI extends Page {
             }
         })
     }
+
+    switchMode() {
+        let newVideoCtrl = null;
+        if(this.mode == MODE_NORMAL) {
+          this.sbsPlayerUI.hide();
+          this.normalPlayerUI.show();
+          newVideoCtrl = this.normalPlayerUI.ctrl;
+        } else {
+          this.sbsPlayerUI.show();
+          this.normalPlayerUI.hide();
+          newVideoCtrl = this.sbsPlayerUI.ctrl;
+        }
+        if(this.videoCtrl != null) {
+          this.videoCtrl.pause();
+          let src = this.videoCtrl.src;
+          let playAtTime = this.videoCtrl.currentTime;
+          this.videoCtrl = newVideoCtrl;
+          if(src) {
+            this.videoCtrl.playSource(src, playAtTime);
+          }
+        } else {
+          this.videoCtrl = newVideoCtrl;
+        }
+        
+      }
+
+      showSBSVideo() {
+
+      }
+
+      showNomarlVideo() {
+          
+      }
 }
 
 class PageManager {
