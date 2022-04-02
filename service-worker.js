@@ -22,9 +22,10 @@ self.addEventListener('fetch', (event) => {
       // List : cache.addAll(), takes a list of URLs, then fetches them from...
       // The server and adds the response to the cache...
       './index.html', // cache your index page
-      './*.js', // cache app.main css
+      './index.js', // cache app.main css
       './app.webmanifest',
-      './images/*'
+      './images/*',
+      './lib/*'
      ]);
     }) );
    });
