@@ -1,200 +1,354 @@
-html {
-    height: 100%;
-}
-
 body {
-    height: 100%;
-}
+    font-family: 'Open Sans', sans-serif;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+  }
+  
+  body {
+    background: #616161;
+    margin: 0;
+  }
+  
+  /*flexbox css*/
 
-.hide {
-    display: none;
-}
-
-.mainContainer {
+  .main-page {
+    box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.7);
+    position: relative;
     width: 100%;
     height: 100%;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.originVideoContainer {
-    display:flex; 
-    /* position:absolute;  */
-    top:0px; 
-    left:0px;
-    width: 100%;
-    height: auto;
-    background-color: gray;
-}
-
-.originVideo {
-    /* object-fit: contain; */
-    width: 100%;
-    height: 59.25vw; /* 16:9 */
-}
-
-.sbsVideoContainer {
-    display:flex; 
-    /* position:absolute;  */
-    top:0px; 
-    left:0px;
-    width: 100%;
-    height: auto;
-    background-color: white;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-}
-
-.sbsVideo {
-    width: 50%;
-    height: 28.125vw;
-}
-.sbsLeft {
-    background-color: rgba(255,0,0,0.5);
-}
-.sbsRight {
-    background-color: rgba(0,0,255,0.5);
-}
-
-
-.playerContainer {
-    width: 100%;
-    /* height: 100%; */
-    display:flex;
     justify-content: center;
     align-items:center;
     flex-direction: column;
-    position: absolute;
-}
+  }
 
-.videoMainControls {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: flex;
-    justify-content: center;
-    align-items:flex-start;
-    flex-direction: row;
-    width:100%;
-    height:100%;
-}
+  .large-logo {
+      /* position: absolute; */
+      top:1vh;
+      left: 0;
+      color:#D5D5D3;
+      text-align: center;
+      width: 100%;
+      margin: 1vh 5vh 5vh;
+  }
 
-.videoFileOpenControl {
-    display:none;
-}
-.videoMainLargeControl {
-    background-color: rgba(224,224,192,0.3);
-    top: 0px;
-    left: 0px;
-    width:100%;
-    height:80%;
-    fill:"currentColor";
-}
+  .video-player {
+    box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.7);
+    position: relative;
+    width: auto;
+    height: 100%;
+  }
 
-.videoMainSmallButton {
-    background-color: transparent; 
-    border:0px;
-    top: 0px;
-    left: 0px;
-    width:"auto";
-    height:5vh;
-    fill:"currentColor";
-}
+  .video-container {
+      width: auto;
+      height: 100%;
+  }
+  
+  .single-video {
+      width: auto;
+      height: 100vh !important;
+  }
 
-.videoControlSVG {
-    stroke:goldenrod
-}
-
-.videoContainer {
-    width: 100%;
-    height: 56.25vw;
-    border: solid 1px #0e0;
-}
-
-.videoToolbar {
-    position:absolute;
-    bottom: 0px;
-    /* border: solid 1px green; */
-    --toolbarHeight: 10vh;
-    height: var(--toolbarHeight);
-    width: 90%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    /* background-color: rgba(192,192,192,0.5); */
-    /* visibility: hidden; */
-}
-
-.videoProgressBar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 1em;
-    width: 100%;
-}
-
-.videoProgressLine {
-    stroke:rgba(127,127,127,0.5);
-    stroke-width:0.5vh;
-}
-.videoProgressSeeker {
-    position:absolute;
-    top: 0px;
-    left: 0px;
-    height: 2vh;
-    width: 1vw;
-}
-
-.videoProgressSeekerRect {
-    fill: rgba(64,64,64,0.5)
-}
-
-.popPlayTime {
+  .back-control {
     position:fixed;
-    visibility:hidden;
-     /* display:none; */
-}
+    top:1vh;
+    left: 4vh;
 
-.volumeBar {
-    position:absolute;
-    bottom: 0px;
-    right: 0px;
-}
+    background-color: rgba(51, 51, 51, 0.431);
+    border-radius: 4px;
+    /* background-color: rgba(51, 51, 51, 0.746); */
+    /* padding: 0.1rem; */
+    z-index: 99;
+    display: inline-flex;
+    vertical-align:middle;
+    padding: 0.2rem 0.2rem;
+  }
 
-.SBSViewCtrl {
+  #btn-back-main {
+      height: auto;
+      width: 100%;
+      display: inline-flex;
+      vertical-align:middle;
+      padding: 0.2rem 0.2rem;
+  }
+
+  .controls-container {
     position: absolute;
+    bottom: 2vh;
+    left: 0;
+    right: 0;
     display: flex;
+    justify-content: center;
+    align-items:center;
+    flex-direction: column-reverse;
+   
+  }
+  
+  .controls {
+    width: 80%;
+    margin-top: 5vh;
+    padding: 1vh 1vh;
+    background-color: rgba(51, 51, 51, 0.746);
+    border-radius: 4px;
+  }
+
+  .large-controls {
+    width: 80%;
+    height: 100%; 
+    display: flex;
+    justify-content: center;
+    align-items:center;
     flex-direction: row;
-    bottom:0px;
-    left:0px;
-    height: 3em;
-}
+    margin: 5vh 2vh 2vh;
+  }
 
-.SBSViewCtrl-label {
-    display: block;
-}
+  .large-button {
+      width: 128px;
+      height: 128px;
+      background-color: rgba(250, 250, 250, 0.7);
+      border-radius: 4px;
+      margin: 1vh 1vh;
+      padding: 1vh 1vh;
+  }
 
-/* below style code reference from: https://www.smashingmagazine.com/2021/12/create-custom-range-input-consistent-browsers */
-.SBSViewSlider {
-    background: transparent;
-    width: 9vw;
-}
+  .popup-settings {
+    width: 25%;
+    background-color: rgba(51, 51, 51, 0.431);
+    border-radius: 4px;
 
-.VideoURLContainer {
     position:fixed;
     visibility: hidden;
-    /* top: 0px;
-    left:0px; */
-    width: 100%;
-    height: auto;
+  }
+
+  .button-playrate {
+    color: #d5d5d3;
+    font-size: 1.2rem;
+  }
+
+  .popup-playrate {
+    width: auto;
+    background-color: rgba(51, 51, 51, 0.431);
+    border-radius: 4px;
+
+    position:fixed;
+    visibility: hidden;
+
+    display: flex;
+    justify-content: center;
+    align-items:center;
+    flex-direction: column;
+  }
+  
+
+  .label-playrate {
+    display: block;
+    font-size: 1.2rem;
+    margin: 0.2rem 0.2rem;
+    color: whitesmoke;
+    width: 90%;
+    text-align:right;
+  }
+
+  /* .radio-label {
+
+  } */
+
+  .radio-playrate:checked + .label-playrate {
+    border: 1px solid;
+    border-radius: 1px;
+    background-color: rgba(51, 51, 51, 0.746);
+  }
+
+  .progress-controls {
+    display: flex;
+  }
+  
+  .time-elapsed, .time-remaining {
+    flex: 0 0 auto;
+  }
+  
+  .progress-controls input[type="range"] {
+    flex: 1 1 0px;
+  }
+  
+  .top-controls {
+    display: flex;
+    margin-bottom: 8px;
+  }
+  
+  .volume-controls, .playback-controls, .size-controls {
+    display: flex;
+    align-items: center;
+  }
+  
+  .playback-controls {
+    flex: 0 0 auto;
+  }
+  
+  .volume-controls, .size-controls {
+    flex: 1 1 0px;
+  }
+  
+  .size-controls {
+    justify-content: flex-end;
+  }
+  
+  button, .time-elapsed, .time-remaining {
+    margin: 0 8px;
+  }
+  
+  .video-url {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 80%;
+    border: 1px solid;
+    border-radius: 4px;
+    background-color: #2299F8;
+    
+    /* padding: 1.4rem 2rem 1.6rem; */
+  }
+
+  .video-url-input {
+    flex-grow: 1;
+    font-size: 1.8rem;
+    /* line-height: 2.4rem; */
+    vertical-align: middle;
+      
+  }
+
+  .video-url-submit {
+    font-size: 2.4rem;
+    /* line-height: 2.4rem; */
+    vertical-align: middle;
+    background-color: #2299F8;
+    color: #D5D5D3;
+  }
+  /*additional css*/
+  
+  button {
+    border: none;
+    padding: 0;
+    background-color: transparent;
+    outline: none;
+  }
+  
+  .volume-controls input[type="range"] {
+    display: block;
+    width: 64px;
+  }
+  
+  .time-elapsed, .time-remaining {
+    color: #d5d5d3;
+    font-size: 14px;
+  }
+
+  .popup-playtime {
+    color: #d5d5d3;
+    font-size: 14px;
+    background-color: #2298f84d;
+    border-radius: 4px;
+    /* margin: 0.2rem 1rem; */
+    position:fixed;
+    left: 5vh;
+    bottom: 5vh;
+    visibility: hidden;
+  }
+  
+  input[type="range"] {
+    -webkit-appearance: none;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+    outline: none;
+  }
+  
+  input[type="range"] {
+    padding: 0;
+  }
+
+  input[type="range"]:disabled {
+    visibility: hidden;
+  }
+  
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 1.5vh;
+    background: #d5d5d3;
+    border: none;
+    border-radius: 2px;
+  }
+  
+  /* input[type="range"]::-moz-range-track {
+    height: 4px;
+    background: #d5d5d3;
+    border: none;
+    border-radius: 2px;
+  } */
+  
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: 3vh;
+    width: 3vh;
+    border-radius: 50%;
+    background: #d5d5d3;
+    margin-top: -0.75vh; /* (3-1.5)/2 */
+    border: 1px solid #28271f;
+  }
+  
+  /* input[type="range"]::-moz-range-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: 14px;
+    width: 14px;
+    border-radius: 50%;
+    background: #d5d5d3;
+    margin-top: -5px;
+    border: 1px solid #28271f;
+  } */
+  
+  /* input[type="range"]::-ms-fill-lower,
+  input[type="range"]::-ms-fill-upper {
+    background: transparent;
+  }
+  
+  input[type="range"]::-ms-ticks-before,
+  input[type="range"]::-ms-ticks-after,
+  input[type="range"]::-ms-track {
+    color: transparent;
+  }
+  
+  input[type="range"]::-ms-track {
+    height: 4px;
+    background: #d5d5d3;
+    border: none;
+    border-radius: 2px;
+    height: 14px;
+  }
+  
+  input[type="range"]::-ms-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: 14px;
+    width: 14px;
+    border-radius: 50%;
+    background: #d5d5d3;
+    margin-top: -5px;
+    border: 1px solid #28271f;
+    margin-top: 0;
+  } */
+
+  
+  .hidden-display {
+    display: none;
 }
-
-.VideoURL {
-    width: 100%;
-}
-
-

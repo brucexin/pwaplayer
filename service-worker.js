@@ -1,9 +1,10 @@
 var CACHE_NAME = "PWAPLAYER_CACHE_V1";
-SITE_FILES = new Set(["/index.html"
-  , "/style.css"
-  // , "/service-worker.js"
-  , "/pwa.js"
-  , ]);
+SITE_FILES = new Set(['./index.html', // cache your index page
+    './index.js', // cache app.main css
+    './app.webmanifest',
+    './images/*',
+    './lib/*', 
+  ]);
 
 // async function doRequest(cache, event) {
 //   let networkResponse = await fetch(event.request);
