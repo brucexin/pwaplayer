@@ -74,13 +74,14 @@
           <button id="btn-url-submit" class="video-url-submit">></button>
       </div>
       <input id="input-video-file" class="hidden-display" type="file" accept="video/*"/>
+      <input id="input-subtitle-file" class="hidden-display" type="file" accept="text/vtt"/>
     </div>
   </div>
   
   
   <div id="page-player" class="video-player">
-      <div id="mainVideoContainer" class="video-container">
-          <video id="mainVideo" class="single-video">
+      <div id="div-video" class="single-video-container">
+          <video id="video-main" class="single-video">
       </div>
 
       <div id="div-back-main" class="back-control">
@@ -304,9 +305,9 @@
         </div>
         
         <div class="progress-controls">
-          <span class="time-elapsed">00:00:00</span>
+          <span id="text-time-elapsed" class="time-elapsed">00:00:00</span>
           <input id="range-progress" type="range" min="0" max="100" value="20">
-          <span class="time-remaining">01:14:26</span>
+          <span id="text-time-total" class="time-remaining">01:14:26</span>
         </div>
 
         <div  id="div-popup-playtime"  class="popup-playtime">

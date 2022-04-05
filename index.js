@@ -1,4 +1,4 @@
-import {addWord, removeWord, hasWord} from './lib/utils.js';
+import {addWord, removeWord, hasWord, secondsToHMS} from './lib/utils.js';
 import { SharePlaceGroup } from "./lib/ui_share_place.js";
 import {DOCK_TYPE, showPopup, hidePopup} from "./lib/ui_popup.js";
 import {PWAVideoCtrl, PWASBSVideoCtrl, VIDEOCTRL_ASPECT_RATIO_EVENT} from "./lib/video_ctrl.js"
@@ -142,6 +142,8 @@ class MainUI extends Page {
 }
 
 class PlayerUI extends Page {
+    MODE_NORMAL = 'normal';
+    MODE_SBS = 'sbs';
     constructor() {
         super(document.getElementById("page-player"), 'hidden-display');
         this.playControls = document.getElementById('div-play-controls');
@@ -155,15 +157,17 @@ class PlayerUI extends Page {
        this.initViewModeButtons();
        this.initVolumeButtons();
        this.initPlayButtons();
+       this.initVTTCtrls();
        this.initProgressCtrls();
        this.initBackButton();
     }
 
     active() {
         super.active();
-        document.documentElement.requestFullscreen();
-        screen.orientation.lock('landscape');
+        this.enterFullscreen();
+        
         this.hideControls();
+        this.beginUpdateProgress();
     }
 
     hide() {
@@ -175,7 +179,9 @@ class PlayerUI extends Page {
         this.hideControls();
         if(!this.videoCtrl.ended) {
             this.videoCtrl.pause();
+            
         }
+        this.stopUpdateProgress();
     }
 
     showControls() {
@@ -199,12 +205,32 @@ class PlayerUI extends Page {
         this.spFullscreen.updateTo(this.btnFullscreen);
 
         this.btnFullscreen.addEventListener('click', () => {
-            this.spFullscreen.updateTo(this.btnFullscreenExit);
+            // this.spFullscreen.updateTo(this.btnFullscreenExit);
+            this.enterFullscreen();
         })
 
         this.btnFullscreenExit.addEventListener('click', () => {
-            this.spFullscreen.updateTo(this.btnFullscreen);
+            // this.spFullscreen.updateTo(this.btnFullscreen);
+            this.exitFullscreen();
         })
+    }
+
+    enterFullscreen() {
+        document.documentElement.requestFullscreen().then(() => {
+            screen.orientation.lock('landscape');
+            this.spFullscreen.updateTo(this.btnFullscreenExit);
+        }).catch((err) => {
+            this.spFullscreen.updateTo(this.btnFullscreen);
+            console.log('requestFullscreen failed: ', err);
+        });
+    }
+
+    exitFullscreen() {
+        document.exitFullscreen().then(() => {
+            this.spFullscreen.updateTo(this.btnFullscreen);
+        }).catch((err) => {
+            console.log('exitFullscreen failed: ', err);
+        });
     }
 
     initViewModeButtons() {
@@ -219,10 +245,12 @@ class PlayerUI extends Page {
 
         this.btnVRMode.addEventListener('click', () => {
             this.spViewMode.updateTo(this.btnNormalMode);
+            this.switchMode(this.MODE_SBS);
         })
 
         this.btnNormalMode.addEventListener('click', () => {
             this.spViewMode.updateTo(this.btnVRMode);
+            this.switchMode(this.MODE_NORMAL);
         })
 
         this.popupGroup.add(this.popupSettings, this.playControls, DOCK_TYPE.BOTTOM_TOP);
@@ -257,6 +285,8 @@ class PlayerUI extends Page {
         this.btnPlay = document.getElementById('btn-play');
         this.btnPause = document.getElementById('btn-pause');
         this.spPlay = new SharePlaceGroup([this.btnPlay, this.btnPause], "hidden-display");
+        this.userPlayed = false;
+        this.userPaused = false;
 
         this.spPlay.disableAll()
         this.spPlay.updateTo(this.btnPlay);
@@ -264,11 +294,13 @@ class PlayerUI extends Page {
         this.btnPlay.addEventListener('click', () => {
             this.spPlay.updateTo(this.btnPause);
             this.videoCtrl.play();
+            this.userPlayed = true;
         })
 
         this.btnPause.addEventListener('click', () => {
             this.spPlay.updateTo(this.btnPlay);
             this.videoCtrl.pause();
+            this.userPaused = true;
         })
 
         this.btnPlayRate = document.getElementById('btn-playrate');
@@ -289,6 +321,10 @@ class PlayerUI extends Page {
             el.addEventListener('click', (evt) => {
                 this.btnPlayRate.innerText = evt.target.value;
                 this.popupGroup.hide(this.popupPlayrate);
+                console.log('video playrate is ', this.videoCtrl.playbackRate);
+                let playbackRate = Number.parseFloat(evt.target.value.substr(0, evt.target.value.length));
+                console.log(`playrate changeto ${playbackRate}`);
+                this.videoCtrl.playbackRate = playbackRate;
             });
         });
 
@@ -305,20 +341,76 @@ class PlayerUI extends Page {
         })
     }
 
+    initVTTCtrls() {
+        this.inputVTTFileSelect = document.getElementById('input-subtitle-file');
+        this.btnCaption = document.getElementById('btn-caption');
+
+        this.btnCaption.addEventListener('click', () => {
+            this.inputVTTFileSelect.click();
+        });
+        this.inputVTTFileSelect.addEventListener('change', () => {
+            console.log('setVTT ', this.inputVTTFileSelect.files);
+            if(this.inputVTTFileSelect.files.length > 0) {
+                console.log('setVTT ', this.inputVTTFileSelect.files[0]);
+                this.videoCtrl.clearVTT();
+                this.videoCtrl.setVTT(this.inputVTTFileSelect.files[0]);
+            }
+            this.inputVTTFileSelect.value = '';
+        });
+    }
+
     initProgressCtrls() {
         this.rangeProgress = document.getElementById('range-progress');
         this.popupPlayTime = document.getElementById('div-popup-playtime');
+        this.textTimeElapsed = document.getElementById('text-time-elapsed');
+        this.textTimeTotal = document.getElementById('text-time-total');
 
-        console.log('register range hover');
         this.rangeProgress.addEventListener('mousemove', (evt) => {
+            let pointedTime = this.calculateProgressByPoint(evt);
+            let timestr = secondsToHMS(pointedTime);
+            this.popupPlayTime.innerHTML = timestr;
+
             showPopup(this.popupPlayTime, this.rangeProgress, DOCK_TYPE.BOTTOM_TOP, evt.clientX, -2);
         });
         this.rangeProgress.addEventListener('mouseleave', (evt) => {
             hidePopup(this.popupPlayTime);
         });
-        // this.rangeVolume.addEventListener('click', (evt) => {
-        //     self.changeTimeByProgressClick(evt);
-        // });
+        this.rangeProgress.addEventListener('click', (evt) => {
+            let pointedTime = this.calculateProgressByPoint(evt);
+            console.log('seekTo ', secondsToHMS(pointedTime));
+            this.videoCtrl.seekTo(pointedTime);
+        });
+    }
+
+    updateProgress() {
+      let playedSecs = Math.ceil(this.videoCtrl.currentTime);
+      let durationSecs = Math.ceil(this.videoCtrl.duration);
+      // console.log(`progress ${playedSecs}/${durationSecs}`);
+      let currTimeStr = secondsToHMS(playedSecs);
+      let totalTimeStr = secondsToHMS(durationSecs);
+      this.textTimeElapsed.innerHTML = currTimeStr;
+      this.textTimeTotal.innerHTML = totalTimeStr;
+      this.rangeProgress.max = `${durationSecs}`;
+      this.rangeProgress.value = `${playedSecs}`;
+    }
+
+    beginUpdateProgress() {
+        let self = this;
+        this._updateProgressTimer =  setInterval(function () {
+            self.updateProgress();
+        }, 1000); // update progress per second
+    }
+
+    stopUpdateProgress() {
+        if(this._updateProgressTimer) {
+            clearTimeout(this._updateProgressTimer);
+        }
+    }
+
+    calculateProgressByPoint(evt) {
+        let durationSecs = Math.ceil(this.videoCtrl.duration);
+        let maxVal = this.rangeProgress.clientWidth;
+        return Math.round(durationSecs*(evt.offsetX/maxVal));
     }
 
     initBackButton() {
@@ -330,7 +422,12 @@ class PlayerUI extends Page {
     }
 
     initVideo() {
-        this.videoCtrl = new PWAVideoCtrl(document.getElementById('mainVideo'));
+        this.mainVideoEl = document.getElementById('video-main');
+        console.log('mainVideo playrate', this.mainVideoEl.playbackRate);
+        // this.mainVideoEl.preservesPitch = false;
+        this.videoCtrl = new PWAVideoCtrl(this.mainVideoEl);
+        this.videoContainer = document.getElementById('div-video');
+        this.rightVideoEl = null;
         document.addEventListener(VIDEO_SOURCE_CHANGE_EVENT, (evt) => {
             console.log('receive video src event! ', evt);
             if(evt.detail.files) {
@@ -342,48 +439,78 @@ class PlayerUI extends Page {
                 } else {
                     this.videoCtrl.playSource(src);
                 }
+                this.videoCtrl.clearVTT();
             }
         });
-        this.videoCtrl.addEventListener('click', () => {
+        this.videoContainer.addEventListener('click', () => {
             if(this.controlsShowed) {
                 this.hideControls();
             } else {
                 this.showControls();
             }
         })
+        this.videoCtrl.addEventListener(VIDEOCTRL_ASPECT_RATIO_EVENT, (ctrl) => {
+
+        });
     }
 
-    switchMode() {
+    switchMode(mode) {
+        console.log('swithMode to', mode);
         let newVideoCtrl = null;
-        if(this.mode == MODE_NORMAL) {
-          this.sbsPlayerUI.hide();
-          this.normalPlayerUI.show();
-          newVideoCtrl = this.normalPlayerUI.ctrl;
-        } else {
-          this.sbsPlayerUI.show();
-          this.normalPlayerUI.hide();
-          newVideoCtrl = this.sbsPlayerUI.ctrl;
+        if(mode == this.MODE_NORMAL && this.videoCtrl instanceof PWASBSVideoCtrl) {
+          this.showNormalVideo();
+          newVideoCtrl = new PWAVideoCtrl(this.mainVideoEl);
+        } else if(mode == this.MODE_SBS && this.videoCtrl instanceof PWAVideoCtrl) {
+            console.log('swithMode ', mode);
+          this.showSBSVideo();
+          newVideoCtrl = new PWASBSVideoCtrl(this.mainVideoEl, this.rightVideoEl);
         }
-        if(this.videoCtrl != null) {
+        if(newVideoCtrl != null) {
+          // release old videoCtrl
           this.videoCtrl.pause();
           let src = this.videoCtrl.src;
           let playAtTime = this.videoCtrl.currentTime;
+          let width = this.videoCtrl.width;
+          let height = this.videoCtrl.height;
+          let ratio = this.videoCtrl.ratio;
+          this.videoCtrl.free();
+          // run new VideoCtrl
           this.videoCtrl = newVideoCtrl;
+          this.videoCtrl.width = width;
+          this.videoCtrl.height = height;
+          this.videoCtrl.ratio = ratio;
           if(src) {
             this.videoCtrl.playSource(src, playAtTime);
           }
-        } else {
-          this.videoCtrl = newVideoCtrl;
         }
-        
       }
 
       showSBSVideo() {
+        if(hasWord('single-video', this.mainVideoEl.className)) {
+            this.mainVideoEl.className = removeWord('single-video', this.mainVideoEl.className);   
+        }
+        if(!hasWord('sbs-video', this.mainVideoEl.className)) {
+            this.mainVideoEl.className = addWord('sbs-video', this.mainVideoEl.className);
+        }
+        this.rightVideoEl = document.createElement('video');
+        // this.rightVideoEl.preservesPitch = false;
+        this.rightVideoEl.id = 'video-right';
+        this.rightVideoEl.className = 'sbs-video';
+        this.videoContainer.appendChild(this.rightVideoEl);
 
       }
 
-      showNomarlVideo() {
-          
+      showNormalVideo() {
+          if(this.rightVideoEl) {
+            this.rightVideoEl.remove();
+          }
+          if(hasWord('sbs-video', this.mainVideoEl.className)) {
+            this.mainVideoEl.className = removeWord('sbs-video', this.mainVideoEl.className);   
+          }
+          if(!hasWord('single-video', this.mainVideoEl.className)) {
+            this.mainVideoEl.className = addWord('single-video', this.mainVideoEl.className);
+          }
+          this.rightVideoEl = null;
       }
 }
 
