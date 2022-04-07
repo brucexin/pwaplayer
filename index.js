@@ -1,4 +1,4 @@
-import {addWord, removeWord, hasWord, secondsToHMS} from './lib/utils.js';
+import {addWord, removeWord, hasWord, secondsToHMS, SimpleDebouncer} from './lib/utils.js';
 import { SharePlaceGroup } from "./lib/ui_share_place.js";
 import {DOCK_TYPE, showPopup, hidePopup} from "./lib/ui_popup.js";
 import {PWAVideoCtrl, PWASBSVideoCtrl, VIDEOCTRL_ASPECT_RATIO_EVENT} from "./lib/video_ctrl.js"
@@ -149,6 +149,9 @@ class PlayerUI extends Page {
         this.playControls = document.getElementById('div-play-controls');
         this.controlsShowed = false;
 
+        this.resizeDebouncer = new SimpleDebouncer(this._onResize, 500);
+        this.boundDebouncerCall = this.resizeDebouncer.call.bind(this.resizeDebouncer);
+
        this.popupGroup = new PopupGroup();
 
        this.initVideo();
@@ -168,9 +171,12 @@ class PlayerUI extends Page {
         
         this.hideControls();
         this.beginUpdateProgress();
+
+        window.addEventListener('resize', this.boundDebouncerCall);
     }
 
     hide() {
+        window.removeEventListener('resize', this.boundDebouncerCall);
         super.hide();
         if(document.fullscreenElement) {
             document.exitFullscreen();
@@ -219,6 +225,9 @@ class PlayerUI extends Page {
         document.documentElement.requestFullscreen().then(() => {
             screen.orientation.lock('landscape');
             this.spFullscreen.updateTo(this.btnFullscreenExit);
+            console.log('window: ', window.innerWidth, window.innerHeight);
+            console.log('screen: ', window.screen.width, window.screen.height);
+            console.log('devicePR:', window.devicePixelRatio);
         }).catch((err) => {
             this.spFullscreen.updateTo(this.btnFullscreen);
             console.log('requestFullscreen failed: ', err);
@@ -421,6 +430,24 @@ class PlayerUI extends Page {
         });
     }
 
+    initVideoRatio() {
+        this.videoRatioUser = null;
+        this.videoClass = null;
+        this.videoCtrl.addEventListener(VIDEOCTRL_ASPECT_RATIO_EVENT, (evt) => {
+            let ctrl = evt.detail.ctrl;
+            console.log('videoctrl ratio:', ctrl.width, ctrl.height, ctrl.ratio);
+            console.log('window: ', window.innerWidth, window.innerHeight);
+            console.log('screen: ', window.screen.width, window.screen.height);
+            console.log('devicePR:', window.devicePixelRatio);
+            // let scaleRatio = 1;
+            // if(ctrl.width > window.innerWidth || ctrl.height > window.innerHeight) {
+
+            // }
+            // = window.innerWidth/ctrl.width;
+            
+        });
+    }
+
     initVideo() {
         this.mainVideoEl = document.getElementById('video-main');
         console.log('mainVideo playrate', this.mainVideoEl.playbackRate);
@@ -449,9 +476,7 @@ class PlayerUI extends Page {
                 this.showControls();
             }
         })
-        this.videoCtrl.addEventListener(VIDEOCTRL_ASPECT_RATIO_EVENT, (ctrl) => {
-
-        });
+       this.initVideoRatio();
     }
 
     switchMode(mode) {
@@ -486,16 +511,16 @@ class PlayerUI extends Page {
       }
 
       showSBSVideo() {
-        if(hasWord('single-video', this.mainVideoEl.className)) {
-            this.mainVideoEl.className = removeWord('single-video', this.mainVideoEl.className);   
-        }
-        if(!hasWord('sbs-video', this.mainVideoEl.className)) {
-            this.mainVideoEl.className = addWord('sbs-video', this.mainVideoEl.className);
-        }
+        // if(hasWord('single-video', this.mainVideoEl.className)) {
+        //     this.mainVideoEl.className = removeWord('single-video', this.mainVideoEl.className);   
+        // }
+        // if(!hasWord('sbs-video', this.mainVideoEl.className)) {
+        //     this.mainVideoEl.className = addWord('sbs-video', this.mainVideoEl.className);
+        // }
         this.rightVideoEl = document.createElement('video');
         // this.rightVideoEl.preservesPitch = false;
         this.rightVideoEl.id = 'video-right';
-        this.rightVideoEl.className = 'sbs-video';
+        this.rightVideoEl.className = 'normal-video';
         this.videoContainer.appendChild(this.rightVideoEl);
 
       }
@@ -504,13 +529,34 @@ class PlayerUI extends Page {
           if(this.rightVideoEl) {
             this.rightVideoEl.remove();
           }
-          if(hasWord('sbs-video', this.mainVideoEl.className)) {
-            this.mainVideoEl.className = removeWord('sbs-video', this.mainVideoEl.className);   
-          }
-          if(!hasWord('single-video', this.mainVideoEl.className)) {
-            this.mainVideoEl.className = addWord('single-video', this.mainVideoEl.className);
-          }
+        //   if(hasWord('sbs-video', this.mainVideoEl.className)) {
+        //     this.mainVideoEl.className = removeWord('sbs-video', this.mainVideoEl.className);   
+        //   }
+        //   if(!hasWord('single-video', this.mainVideoEl.className)) {
+        //     this.mainVideoEl.className = addWord('single-video', this.mainVideoEl.className);
+        //   }
           this.rightVideoEl = null;
+      }
+
+      _fitScreenSize() {
+        let screenRatio = Math.fround(window.innerWidth / window.innerWidth);
+        if(screenRatio >= this.videoCtrl.ratio) {
+            this._videoClass = 'single-video-height-first';
+        } else {
+            this._videoClass = 'single-video-width-first';
+        }
+      }
+
+      _onResize() {
+        console.log(Date.now(), 'window resize ', window.innerWidth, window.innerHeight, window.location.href);
+        // if(this.videoCtrl.ratio) { // After video loadedmetadata
+        //     if(window.innerHeight >= this.videoCtrl.height && window.innerWidth >= this.videoCtrl.width) {
+        //         this._keepVideoSize();
+        //     } else {
+        //         this._fitScreenSize();
+        //     }
+            
+        // }
       }
 }
 
@@ -553,4 +599,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     pageMgr = new PageManager([playPage, mainPage], mainPage);
 });
+
+
 
