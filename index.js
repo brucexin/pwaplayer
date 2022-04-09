@@ -1,4 +1,5 @@
-import {addWord, removeWord, hasWord, secondsToHMS, SimpleDebouncer} from './lib/utils.js';
+import {addWord, removeWord, hasWord, secondsToHMS, SimpleDebouncer,
+    parseFloatWithDefault} from './lib/utils.js';
 import { SharePlaceGroup } from "./lib/ui_share_place.js";
 import {DOCK_TYPE, showPopup, hidePopup} from "./lib/ui_popup.js";
 import {PWAVideoCtrl, PWASBSVideoCtrl, VIDEOCTRL_ASPECT_RATIO_EVENT} from "./lib/video_ctrl.js"
@@ -137,6 +138,7 @@ class MainUI extends Page {
         );
         console.log('trigger video file event');
         document.dispatchEvent(event);
+        this.inputFileSelect.value = '';
     }
     
 }
@@ -149,7 +151,7 @@ class PlayerUI extends Page {
         this.playControls = document.getElementById('div-play-controls');
         this.controlsShowed = false;
 
-        this.resizeDebouncer = new SimpleDebouncer(this._onResize, 500);
+        this.resizeDebouncer = new SimpleDebouncer(this._onResize.bind(this), 500);
         this.boundDebouncerCall = this.resizeDebouncer.call.bind(this.resizeDebouncer);
 
        this.popupGroup = new PopupGroup();
@@ -439,6 +441,7 @@ class PlayerUI extends Page {
             console.log('window: ', window.innerWidth, window.innerHeight);
             console.log('screen: ', window.screen.width, window.screen.height);
             console.log('devicePR:', window.devicePixelRatio);
+            this._adjustVideoSize();
             // let scaleRatio = 1;
             // if(ctrl.width > window.innerWidth || ctrl.height > window.innerHeight) {
 
@@ -448,12 +451,30 @@ class PlayerUI extends Page {
         });
     }
 
+    initVideoContainer() {
+        this.videoContainer = document.getElementById('div-video');
+        let vcStyle = getComputedStyle(this.videoContainer);
+        this._vcBorderWidth = parseFloatWithDefault(vcStyle.border);
+        if(isNaN(this._vcBorderWidth)) {
+            this._vcBorderWidth = 0;
+        }
+        this._vcPaddingWidth = {
+            'left': parseFloatWithDefault(vcStyle.paddingLeft),
+            'right': parseFloatWithDefault(vcStyle.paddingRight),
+            'top': parseFloatWithDefault(vcStyle.paddingTop),
+            'bottom': parseFloatWithDefault(vcStyle.paddingBottom)
+        };
+
+        console.log('videoContainer rect', this._vcBorderWidth, this._vcPaddingWidth);
+    }
+
     initVideo() {
+        this.initVideoContainer();
         this.mainVideoEl = document.getElementById('video-main');
         console.log('mainVideo playrate', this.mainVideoEl.playbackRate);
         // this.mainVideoEl.preservesPitch = false;
         this.videoCtrl = new PWAVideoCtrl(this.mainVideoEl);
-        this.videoContainer = document.getElementById('div-video');
+        
         this.rightVideoEl = null;
         document.addEventListener(VIDEO_SOURCE_CHANGE_EVENT, (evt) => {
             console.log('receive video src event! ', evt);
@@ -520,7 +541,7 @@ class PlayerUI extends Page {
         this.rightVideoEl = document.createElement('video');
         // this.rightVideoEl.preservesPitch = false;
         this.rightVideoEl.id = 'video-right';
-        this.rightVideoEl.className = 'normal-video';
+        // this.rightVideoEl.className = 'normal-video';
         this.videoContainer.appendChild(this.rightVideoEl);
 
       }
@@ -538,25 +559,75 @@ class PlayerUI extends Page {
           this.rightVideoEl = null;
       }
 
-      _fitScreenSize() {
-        let screenRatio = Math.fround(window.innerWidth / window.innerWidth);
-        if(screenRatio >= this.videoCtrl.ratio) {
-            this._videoClass = 'single-video-height-first';
+      _adjustVideoSize() {
+        let videos = this.videoContainer.getElementsByTagName('video');
+        let vcAdditionHeight = this._vcPaddingWidth.top + this._vcPaddingWidth.bottom +
+            this._vcBorderWidth*2;
+        let vcAdditionWidth = this._vcPaddingWidth.left + this._vcPaddingWidth.right +
+            this._vcBorderWidth*2;
+        console.log('vcAdditionHeight ', vcAdditionHeight);
+        let vcSize = [this.videoCtrl.width*videos.length+vcAdditionWidth,
+            this.videoCtrl.height+vcAdditionHeight, vcAdditionWidth, vcAdditionHeight];
+        if(window.innerHeight >= vcSize[1] &&
+             window.innerWidth >= vcSize[0]) {
+            this._keepVideoSize(videos, vcSize);
         } else {
-            this._videoClass = 'single-video-width-first';
+            this._fitScreenSize(videos, vcSize);
         }
+      }
+
+      _keepVideoSize(videos, vcSize) {
+          let cwidth = vcSize[0] + 'px';
+          let vwidth = this.videoCtrl.width + 'px';
+          let vheight = this.videoCtrl.height + 'px'
+          let marginVeri = (window.innerHeight - vcSize[1])/2 + 'px';
+          let marginHori = (window.innerWidth - vcSize[0])/2 + 'px';
+          for(let v of videos) {
+              v.style.width = vwidth;
+              v.style.height = vheight;
+          }
+          this.videoContainer.style.width = cwidth;
+          this.videoContainer.style.height = vheight;
+          this.videoContainer.style.marginTop = marginVeri;
+          this.videoContainer.style.marginBottom = marginVeri;
+          this.videoContainer.style.marginLeft = marginHori;
+          this.videoContainer.style.marginRight = marginHori;
+          
+      }
+
+
+
+      _fitScreenSize(videos, vcSize) {
+        console.log('fit screen ', vcSize, window.innerWidth, window.innerHeight);
+        let scale = Math.max(vcSize[0]/window.innerWidth, vcSize[1]/window.innerHeight);
+        // let vWidthVal = this.videoCtrl.width/scale;
+        let vcClientWidthVal = Math.ceil(vcSize[0]/scale);
+        let vcClientHeightVal = Math.ceil(vcSize[1]/scale);
+        let cWidthVal = vcClientWidthVal - vcSize[2];
+        let cHeightVal = vcClientHeightVal - vcSize[3] ;
+        let vwidth = Math.ceil(cWidthVal/videos.length) + 'px';
+        let vheight = cHeightVal + 'px';
+        let marginVeri = (window.innerHeight - vcClientHeightVal)/2 + 'px';
+        let marginHori = (window.innerWidth - vcClientWidthVal)/2 + 'px';
+        for(let v of videos) {
+            v.style.width = vwidth;
+            v.style.height = vheight;
+        }
+        // this.videoContainer.style.width = vWidthVal*videos.length + 'px';
+        this.videoContainer.style.width = cWidthVal + 'px';
+        this.videoContainer.style.height = cHeightVal + 'px';
+        this.videoContainer.style.marginTop = marginVeri;
+        this.videoContainer.style.marginBottom = marginVeri;
+        this.videoContainer.style.marginLeft = marginHori;
+        this.videoContainer.style.marginRight = marginHori;
       }
 
       _onResize() {
         console.log(Date.now(), 'window resize ', window.innerWidth, window.innerHeight, window.location.href);
-        // if(this.videoCtrl.ratio) { // After video loadedmetadata
-        //     if(window.innerHeight >= this.videoCtrl.height && window.innerWidth >= this.videoCtrl.width) {
-        //         this._keepVideoSize();
-        //     } else {
-        //         this._fitScreenSize();
-        //     }
+        if(this.videoCtrl.ratio) { // After video loadedmetadata
+           this._adjustVideoSize(); 
             
-        // }
+        }
       }
 }
 
