@@ -281,15 +281,24 @@ class PlayerUI extends Page {
         this.spVolume.disableAll()
         this.spVolume.updateTo(this.btnMute);
 
+        this.rangeVolume.value = this.videoCtrl.volume*100;
+
         this.btnMute.addEventListener('click', () => {
             this.spVolume.updateTo(this.btnVolumeOpen);
             this.rangeVolume.disabled="disabled";
+            this.videoCtrl.muted = true;
         })
 
         this.btnVolumeOpen.addEventListener('click', () => {
             this.spVolume.updateTo(this.btnMute);
             this.rangeVolume.disabled="";
+            this.videoCtrl.muted = false;
         })
+
+        this.rangeVolume.addEventListener("change", (evt) => {
+            console.log(`volume change to ${evt.target.value}`);
+            this.videoCtrl.volume = evt.target.value/100;
+        });
     }
 
     initPlayButtons() {
@@ -541,7 +550,7 @@ class PlayerUI extends Page {
         this.rightVideoEl = document.createElement('video');
         // this.rightVideoEl.preservesPitch = false;
         this.rightVideoEl.id = 'video-right';
-        // this.rightVideoEl.className = 'normal-video';
+        this.rightVideoEl.className = this.mainVideoEl.className;
         this.videoContainer.appendChild(this.rightVideoEl);
 
       }
