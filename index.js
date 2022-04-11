@@ -1,5 +1,5 @@
 import {addWord, removeWord, hasWord, secondsToHMS, SimpleDebouncer,
-    parseFloatWithDefault} from './lib/utils.js';
+    parseFloatWithDefault, parseIntWithDefault} from './lib/utils.js';
 import { SharePlaceGroup } from "./lib/ui_share_place.js";
 import {DOCK_TYPE, showPopup, hidePopup} from "./lib/ui_popup.js";
 import {PWAVideoCtrl, PWASBSVideoCtrl, VIDEOCTRL_ASPECT_RATIO_EVENT} from "./lib/video_ctrl.js"
@@ -143,6 +143,196 @@ class MainUI extends Page {
     
 }
 
+class NormalVideoView {
+    constructor(videoContainer, vcPaddingWidth, vcBorderWidth) {
+        this.videoContainer = videoContainer;
+        this.vcPaddingWidth = vcPaddingWidth;
+        this.vcBorderWidth = vcBorderWidth;
+    }
+
+    update(videoCtrl) {
+        let video = this.videoContainer.getElementsByTagName('video')[0];
+        let vcAdditionHeight = this.vcPaddingWidth.top + this.vcPaddingWidth.bottom +
+            this.vcBorderWidth*2;
+        let vcAdditionWidth = this.vcPaddingWidth.left + this.vcPaddingWidth.right +
+            this.vcBorderWidth*2;
+        let vcSize = [videoCtrl.width+vcAdditionWidth,
+            videoCtrl.height+vcAdditionHeight,
+            vcAdditionWidth,
+            vcAdditionHeight];
+        if(window.innerHeight >= vcSize[1] &&
+                window.innerWidth >= vcSize[0]) {
+            this._keepVideoSize(video, vcSize, videoCtrl.width, videoCtrl.height);
+        } else {
+            this._fitScreenSize(video, vcSize, videoCtrl.width, videoCtrl.height);
+        }
+    }
+
+    _keepVideoSize(video, vcSize, videoWidth, videoHeight) {
+        // let cwidth = vcSize[0] + 'px';
+        let marginVeri = (window.innerHeight - vcSize[1])/2 + 'px';
+        let marginHori = (window.innerWidth - vcSize[0])/2 + 'px';
+  
+        this.videoContainer.style.width = vcSize[0] + 'px';;
+        this.videoContainer.style.height = vcSize[1] + 'px';;
+        this.videoContainer.style.marginTop = marginVeri;
+        this.videoContainer.style.marginBottom = marginVeri;
+        this.videoContainer.style.marginLeft = marginHori;
+        this.videoContainer.style.marginRight = marginHori;
+        this._drawVideo(video, videoWidth, videoHeight);
+    }
+
+      _fitScreenSize(video, vcSize) {
+        let scale = Math.max(vcSize[0]/window.innerWidth, vcSize[1]/window.innerHeight);
+        // let vWidthVal = this.videoCtrl.width/scale;
+        let vcClientWidthVal = Math.floor(vcSize[0]/scale);
+        let vcClientHeightVal = Math.floor(vcSize[1]/scale);
+        let cWidthVal = vcClientWidthVal - vcSize[2];
+        let cHeightVal = vcClientHeightVal - vcSize[3] ;
+        // let vwidth = Math.ceil(cWidthVal/videos.length) + 'px';
+        // let vheight = cHeightVal + 'px';
+        // let marginVeri = (window.innerHeight - vcClientHeightVal)/2 + 'px';
+        let marginHori = (window.innerWidth - vcClientWidthVal)/2 + 'px';
+    
+        this.videoContainer.style.width = cWidthVal + 'px';
+        this.videoContainer.style.height = cHeightVal + 'px';
+        this.videoContainer.style.marginTop = '0px';
+        this.videoContainer.style.marginBottom = '0px';
+        this.videoContainer.style.marginLeft = marginHori;
+        this.videoContainer.style.marginRight = marginHori;
+
+        this._drawVideo(video, cWidthVal, cHeightVal);
+      }
+
+      _drawVideo(video, width, height) {
+        video.style.width = width + 'px';
+        video.style.height = height + 'px';
+        video.style.paddingLeft = '0px';
+        video.style.paddingRight = '0px';
+      }
+}
+
+class SBSVideoView {
+    constructor(videoContainer, vcPaddingWidth, vcBorderWidth, 
+        rangeSBSViewSize, rangeSBSVPos, rangeSBSHPos) {
+        this.videoContainer = videoContainer;
+        this.vcPaddingWidth = vcPaddingWidth;
+        this.vcBorderWidth = vcBorderWidth;
+        this.rangeSBSViewSize = rangeSBSViewSize;
+        this.rangeSBSVPos = rangeSBSVPos;
+        this.rangeSBSHPos = rangeSBSHPos;
+    }
+
+    update(videoCtrl) {
+        let videos = this.videoContainer.getElementsByTagName('video');
+        let vcAdditionHeight = this.vcPaddingWidth.top + this.vcPaddingWidth.bottom +
+            this.vcBorderWidth*2;
+        let vcAdditionWidth = this.vcPaddingWidth.left + this.vcPaddingWidth.right +
+            this.vcBorderWidth*2;
+
+        //vcSize is [100vw, 100vh] sub padding and bord
+        let vcSize = [window.innerWidth - vcAdditionWidth,
+            window.innerHeight - vcAdditionHeight, 
+            vcAdditionWidth, 
+            vcAdditionHeight];
+
+        let marginVeri = (window.innerHeight - vcSize[1])/2 + 'px';
+        let marginHori = (window.innerWidth - vcSize[0])/2 + 'px';
+        //   for(let v of videos) {
+        //       v.style.width = vwidth;
+        //       v.style.height = vheight;
+        //   }
+        this.videoContainer.style.width = vcSize[0] + 'px';
+        this.videoContainer.style.height = vcSize[1] + 'px';
+        this.videoContainer.style.marginTop = marginVeri;
+        this.videoContainer.style.marginBottom = marginVeri;
+        this.videoContainer.style.marginLeft = marginHori;
+        this.videoContainer.style.marginRight = marginHori;
+
+        let videoSize = this._calcVideoSize(videoCtrl.width, videoCtrl.height);
+
+        if(vcSize[1] >= videoCtrl.height &&
+             vcSize[0] >= (videoCtrl.width*videos.length)) {
+            this._keepVideoSize(videos, vcSize, videoSize);
+        } else {
+            this._fitScreenSize(videos, vcSize, videoSize);
+        }
+      }
+
+      _calcVideoSize(width, height) {
+        let valueViewSize = parseIntWithDefault(this.rangeSBSViewSize.value, 1);
+        let valueMaxViewSize = parseInt(this.rangeSBSViewSize.max);
+        let scaleViewSize = valueViewSize/valueMaxViewSize;
+        let viewWidth = width * scaleViewSize;
+        let viewHeight = height * scaleViewSize;
+
+        console.log("scale ", valueMaxViewSize, valueViewSize, scaleViewSize);
+        return [viewWidth, viewHeight];
+      }
+
+      _keepVideoSize(videos, vcSize, videoSize) {
+          vcSize[1] = videoSize[1];
+          this._drawVideoContainer(vcSize);
+          this._drawVideo(videos, vcSize, videoSize);
+      }
+
+      _fitScreenSize(videos, vcSize, videoSize) {
+        console.log('fit screen ', vcSize, videoSize);
+        let videoFullWidth = videoSize[0] * videos.length;
+        let videoFullHeight = videoSize[1];
+        let scale = Math.min(vcSize[0]/videoFullWidth, 
+            vcSize[1]/videoFullHeight);
+        // let vWidthVal = this.videoCtrl.width/scale;
+        let videoScreenWidth = Math.floor(videoFullWidth*scale);
+        let videoScreenHeight = Math.floor(videoFullHeight*scale);
+        let newVideoWidth = Math.floor(videoScreenWidth/videos.length);
+        let newVideoHeight = videoScreenHeight;
+        
+        vcSize[1] = newVideoHeight;
+
+        this._drawVideoContainer(vcSize);
+        this._drawVideo(videos, vcSize, [newVideoWidth, newVideoHeight]);
+      }
+
+      _drawVideoContainer(vcSize) {
+        let vStepMax = parseInt(this.rangeSBSVPos.max);
+        let vStepMin = parseInt(this.rangeSBSVPos.min);
+        let vStepLevel = parseIntWithDefault(this.rangeSBSVPos.value, 0);
+        let remindSpace = (window.innerHeight - vcSize[1] - vcSize[3]);
+        let vStep = Math.floor(remindSpace/(vStepMax-vStepMin));
+        let marginTopVal = vStepLevel*vStep;
+        let marginBottomVal = remindSpace - vStepLevel*vStep;
+        // let marginVeri = '0px';
+        let marginHori = '0px';
+
+        console.log("VERI ", vStepMin, vStepMax, vStepLevel, vStep);
+
+        this.videoContainer.style.width = vcSize[0] + 'px';
+        this.videoContainer.style.height = vcSize[1] + 'px';
+
+        this.videoContainer.style.marginTop = marginTopVal + 'px';;
+        this.videoContainer.style.marginBottom = marginBottomVal + 'px';
+        this.videoContainer.style.marginLeft = marginHori;
+        this.videoContainer.style.marginRight = marginHori;
+      }
+
+      _drawVideo(videos, vcSize, videoSize) {
+        let hStepMax = parseInt(this.rangeSBSHPos.max);
+        let hStepMin = parseInt(this.rangeSBSHPos.min);
+        let hStepLevel = parseIntWithDefault(this.rangeSBSHPos.value, 0);
+        let hStep = Math.floor((vcSize[0] - videoSize[0]*2)/(hStepMax-hStepMin));
+        
+        console.log("HORI ", hStepMin, hStepMax, hStepLevel, hStep);
+        videos[0].style.width = videoSize[0] + 'px';
+        videos[0].style.height = videoSize[1] + 'px';
+        videos[0].style.paddingRight = (hStep * hStepLevel)/2 + 'px';
+
+        videos[1].style.width = videoSize[0] + 'px';
+        videos[1].style.height = videoSize[1] + 'px';
+        videos[1].style.paddingLeft = (hStep * hStepLevel)/2 + 'px';
+      }
+}
+
 class PlayerUI extends Page {
     MODE_NORMAL = 'normal';
     MODE_SBS = 'sbs';
@@ -249,7 +439,15 @@ class PlayerUI extends Page {
         this.btnNormalMode = document.getElementById('btn-normal-mode');
         this.btnSettings = document.getElementById('btn-settings');
         this.popupSettings = document.getElementById('div-popup-settings');
-        this.spViewMode = new SharePlaceGroup([this.btnVRMode, this.btnNormalMode], "hidden-display");
+        this.rangeSBSViewSize = document.getElementById('range-SBSViewSize');
+        this.rangeSBSHPos = document.getElementById('range-SBSHPos');
+        this.rangeSBSVPos = document.getElementById('range-SBSVPos');
+        this.spViewMode = new SharePlaceGroup([this.btnVRMode, this.btnNormalMode], 
+            "hidden-display");
+
+        this.videoView = new NormalVideoView(this.videoContainer, 
+            this._vcPaddingWidth,
+            this._vcBorderWidth);
 
         this.spViewMode.disableAll()
         this.spViewMode.updateTo(this.btnVRMode);
@@ -270,6 +468,17 @@ class PlayerUI extends Page {
             let x = this.btnSettings.getBoundingClientRect().x - this.popupSettings.getBoundingClientRect().width/2;
             this.popupGroup.toggle(this.popupSettings, x, -5);
         })
+
+        this.rangeSBSViewSize.addEventListener('change', () => {
+            // this._adjustVideoSize();
+            this.videoView.update(this.videoCtrl);
+        });
+        this.rangeSBSHPos.addEventListener('change', () => {
+            this.videoView.update(this.videoCtrl);
+        });
+        this.rangeSBSVPos.addEventListener('change', () => {
+            this.videoView.update(this.videoCtrl);
+        });
     }
 
     initVolumeButtons() {
@@ -450,7 +659,7 @@ class PlayerUI extends Page {
             console.log('window: ', window.innerWidth, window.innerHeight);
             console.log('screen: ', window.screen.width, window.screen.height);
             console.log('devicePR:', window.devicePixelRatio);
-            this._adjustVideoSize();
+            this.videoView.update(this.videoCtrl);
             // let scaleRatio = 1;
             // if(ctrl.width > window.innerWidth || ctrl.height > window.innerHeight) {
 
@@ -499,7 +708,8 @@ class PlayerUI extends Page {
                 this.videoCtrl.clearVTT();
             }
         });
-        this.videoContainer.addEventListener('click', () => {
+
+        this.page.addEventListener('click', () => {
             if(this.controlsShowed) {
                 this.hideControls();
             } else {
@@ -553,6 +763,13 @@ class PlayerUI extends Page {
         this.rightVideoEl.className = this.mainVideoEl.className;
         this.videoContainer.appendChild(this.rightVideoEl);
 
+        this.videoView = new SBSVideoView(this.videoContainer, 
+            this._vcPaddingWidth,
+            this._vcBorderWidth,
+            this.rangeSBSViewSize,
+            this.rangeSBSVPos,
+            this.rangeSBSHPos);
+
       }
 
       showNormalVideo() {
@@ -566,75 +783,18 @@ class PlayerUI extends Page {
         //     this.mainVideoEl.className = addWord('single-video', this.mainVideoEl.className);
         //   }
           this.rightVideoEl = null;
+
+          this.videoView = new NormalVideoView(this.videoContainer, 
+            this._vcPaddingWidth,
+            this._vcBorderWidth);
+
       }
 
-      _adjustVideoSize() {
-        let videos = this.videoContainer.getElementsByTagName('video');
-        let vcAdditionHeight = this._vcPaddingWidth.top + this._vcPaddingWidth.bottom +
-            this._vcBorderWidth*2;
-        let vcAdditionWidth = this._vcPaddingWidth.left + this._vcPaddingWidth.right +
-            this._vcBorderWidth*2;
-        console.log('vcAdditionHeight ', vcAdditionHeight);
-        let vcSize = [this.videoCtrl.width*videos.length+vcAdditionWidth,
-            this.videoCtrl.height+vcAdditionHeight, vcAdditionWidth, vcAdditionHeight];
-        if(window.innerHeight >= vcSize[1] &&
-             window.innerWidth >= vcSize[0]) {
-            this._keepVideoSize(videos, vcSize);
-        } else {
-            this._fitScreenSize(videos, vcSize);
-        }
-      }
-
-      _keepVideoSize(videos, vcSize) {
-          let cwidth = vcSize[0] + 'px';
-          let vwidth = this.videoCtrl.width + 'px';
-          let vheight = this.videoCtrl.height + 'px'
-          let marginVeri = (window.innerHeight - vcSize[1])/2 + 'px';
-          let marginHori = (window.innerWidth - vcSize[0])/2 + 'px';
-          for(let v of videos) {
-              v.style.width = vwidth;
-              v.style.height = vheight;
-          }
-          this.videoContainer.style.width = cwidth;
-          this.videoContainer.style.height = vheight;
-          this.videoContainer.style.marginTop = marginVeri;
-          this.videoContainer.style.marginBottom = marginVeri;
-          this.videoContainer.style.marginLeft = marginHori;
-          this.videoContainer.style.marginRight = marginHori;
-          
-      }
-
-
-
-      _fitScreenSize(videos, vcSize) {
-        console.log('fit screen ', vcSize, window.innerWidth, window.innerHeight);
-        let scale = Math.max(vcSize[0]/window.innerWidth, vcSize[1]/window.innerHeight);
-        // let vWidthVal = this.videoCtrl.width/scale;
-        let vcClientWidthVal = Math.ceil(vcSize[0]/scale);
-        let vcClientHeightVal = Math.ceil(vcSize[1]/scale);
-        let cWidthVal = vcClientWidthVal - vcSize[2];
-        let cHeightVal = vcClientHeightVal - vcSize[3] ;
-        let vwidth = Math.ceil(cWidthVal/videos.length) + 'px';
-        let vheight = cHeightVal + 'px';
-        let marginVeri = (window.innerHeight - vcClientHeightVal)/2 + 'px';
-        let marginHori = (window.innerWidth - vcClientWidthVal)/2 + 'px';
-        for(let v of videos) {
-            v.style.width = vwidth;
-            v.style.height = vheight;
-        }
-        // this.videoContainer.style.width = vWidthVal*videos.length + 'px';
-        this.videoContainer.style.width = cWidthVal + 'px';
-        this.videoContainer.style.height = cHeightVal + 'px';
-        this.videoContainer.style.marginTop = marginVeri;
-        this.videoContainer.style.marginBottom = marginVeri;
-        this.videoContainer.style.marginLeft = marginHori;
-        this.videoContainer.style.marginRight = marginHori;
-      }
 
       _onResize() {
         console.log(Date.now(), 'window resize ', window.innerWidth, window.innerHeight, window.location.href);
         if(this.videoCtrl.ratio) { // After video loadedmetadata
-           this._adjustVideoSize(); 
+            this.videoView.update(this.videoCtrl);
             
         }
       }
