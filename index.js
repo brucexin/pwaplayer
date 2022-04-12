@@ -249,8 +249,7 @@ class SBSVideoView {
         this.videoContainer.style.marginLeft = marginHori;
         this.videoContainer.style.marginRight = marginHori;
 
-        let videoSize = this._calcVideoSize(videoCtrl.width, videoCtrl.height);
-
+        let videoSize = [videoCtrl.width, videoCtrl.height];
         if(vcSize[1] >= videoCtrl.height &&
              vcSize[0] >= (videoCtrl.width*videos.length)) {
             this._keepVideoSize(videos, vcSize, videoSize);
@@ -270,16 +269,16 @@ class SBSVideoView {
         return [viewWidth, viewHeight];
       }
 
-      _keepVideoSize(videos, vcSize, videoSize) {
-          vcSize[1] = videoSize[1];
-          this._drawVideoContainer(vcSize);
-          this._drawVideo(videos, vcSize, videoSize);
+      _keepVideoSize(videos, vcSize, originVideoSize) {
+        let videoSize = this._drawVideo(videos, vcSize, originVideoSize);
+        vcSize[1] = videoSize[1]; // video container size is [100vw, videoHeight]
+        this._drawVideoContainer(vcSize);
       }
 
-      _fitScreenSize(videos, vcSize, videoSize) {
-        console.log('fit screen ', vcSize, videoSize);
-        let videoFullWidth = videoSize[0] * videos.length;
-        let videoFullHeight = videoSize[1];
+      _fitScreenSize(videos, vcSize, originVideoSize) {
+        console.log('fit screen ', vcSize, originVideoSize);
+        let videoFullWidth = originVideoSize[0] * videos.length;
+        let videoFullHeight = originVideoSize[1];
         let scale = Math.min(vcSize[0]/videoFullWidth, 
             vcSize[1]/videoFullHeight);
         // let vWidthVal = this.videoCtrl.width/scale;
@@ -290,8 +289,10 @@ class SBSVideoView {
         
         vcSize[1] = newVideoHeight;
 
+        let videoSize = this._drawVideo(videos, vcSize, 
+            [newVideoWidth, newVideoHeight]);
+        vcSize[1] = videoSize[1]; // video container size is [100vw, videoHeight]
         this._drawVideoContainer(vcSize);
-        this._drawVideo(videos, vcSize, [newVideoWidth, newVideoHeight]);
       }
 
       _drawVideoContainer(vcSize) {
@@ -317,19 +318,21 @@ class SBSVideoView {
       }
 
       _drawVideo(videos, vcSize, videoSize) {
+        let newVideoSize = this._calcVideoSize(videoSize[0], videoSize[1]);
         let hStepMax = parseInt(this.rangeSBSHPos.max);
         let hStepMin = parseInt(this.rangeSBSHPos.min);
         let hStepLevel = parseIntWithDefault(this.rangeSBSHPos.value, 0);
-        let hStep = Math.floor((vcSize[0] - videoSize[0]*2)/(hStepMax-hStepMin));
+        let hStep = Math.floor((vcSize[0] - newVideoSize[0]*2)/(hStepMax-hStepMin));
         
         console.log("HORI ", hStepMin, hStepMax, hStepLevel, hStep);
-        videos[0].style.width = videoSize[0] + 'px';
-        videos[0].style.height = videoSize[1] + 'px';
+        videos[0].style.width = newVideoSize[0] + 'px';
+        videos[0].style.height = newVideoSize[1] + 'px';
         videos[0].style.paddingRight = (hStep * hStepLevel)/2 + 'px';
 
-        videos[1].style.width = videoSize[0] + 'px';
-        videos[1].style.height = videoSize[1] + 'px';
+        videos[1].style.width = newVideoSize[0] + 'px';
+        videos[1].style.height = newVideoSize[1] + 'px';
         videos[1].style.paddingLeft = (hStep * hStepLevel)/2 + 'px';
+        return newVideoSize;
       }
 }
 
@@ -377,7 +380,6 @@ class PlayerUI extends Page {
         this.hideControls();
         if(!this.videoCtrl.ended) {
             this.videoCtrl.pause();
-            
         }
         this.stopUpdateProgress();
     }
@@ -389,6 +391,7 @@ class PlayerUI extends Page {
     }
 
     hideControls() {
+        this.popupGroup.hideAll();
         this.hideElement(this.btnBack);
         this.hideElement(this.playControls);
         this.controlsShowed = false;
@@ -464,10 +467,10 @@ class PlayerUI extends Page {
 
         this.popupGroup.add(this.popupSettings, this.playControls, DOCK_TYPE.BOTTOM_TOP);
 
-        this.btnSettings.addEventListener('click', () => {
+        this.btnSettings.addEventListener('click', (evt) => {
             let x = this.btnSettings.getBoundingClientRect().x - this.popupSettings.getBoundingClientRect().width/2;
             this.popupGroup.toggle(this.popupSettings, x, -5);
-        })
+        });
 
         this.rangeSBSViewSize.addEventListener('change', () => {
             // this._adjustVideoSize();
@@ -709,7 +712,8 @@ class PlayerUI extends Page {
             }
         });
 
-        this.page.addEventListener('click', () => {
+        this.videoContainer.addEventListener('click', () => {
+            console.log('page clicked');
             if(this.controlsShowed) {
                 this.hideControls();
             } else {
@@ -751,12 +755,9 @@ class PlayerUI extends Page {
       }
 
       showSBSVideo() {
-        // if(hasWord('single-video', this.mainVideoEl.className)) {
-        //     this.mainVideoEl.className = removeWord('single-video', this.mainVideoEl.className);   
-        // }
-        // if(!hasWord('sbs-video', this.mainVideoEl.className)) {
-        //     this.mainVideoEl.className = addWord('sbs-video', this.mainVideoEl.className);
-        // }
+        if(!hasWord('sbs', this.videoContainer.className)) {
+            this.videoContainer.className = addWord('sbs', this.videoContainer.className);
+        }
         this.rightVideoEl = document.createElement('video');
         // this.rightVideoEl.preservesPitch = false;
         this.rightVideoEl.id = 'video-right';
@@ -776,12 +777,10 @@ class PlayerUI extends Page {
           if(this.rightVideoEl) {
             this.rightVideoEl.remove();
           }
-        //   if(hasWord('sbs-video', this.mainVideoEl.className)) {
-        //     this.mainVideoEl.className = removeWord('sbs-video', this.mainVideoEl.className);   
-        //   }
-        //   if(!hasWord('single-video', this.mainVideoEl.className)) {
-        //     this.mainVideoEl.className = addWord('single-video', this.mainVideoEl.className);
-        //   }
+          if(hasWord('sbs', this.videoContainer.className)) {
+            this.videoContainer.className = removeWord('sbs', this.videoContainer.className);   
+          }
+       
           this.rightVideoEl = null;
 
           this.videoView = new NormalVideoView(this.videoContainer, 
