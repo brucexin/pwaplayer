@@ -1,101 +1,88 @@
-var CACHE_NAME = "PWAPLAYER_CACHE_V1";
+var VER = "0.1.0"
+var CACHE_NAME = "PWAPLAYER_CACHE_"+VER;
 SITE_FILES = new Set(['./index.html', // cache your index page
-    './index.js', // cache app.main css
-    './app.webmanifest',
-    './images/*',
-    './lib/*', 
+    '/index.js', // cache app.main css
+    // '/app.webmanifest',
+    '/images/icon.png',
+    '/lib/ui_popup.js', 
+    '/lib/ui_share_place.js', 
+    '/lib/utils.js', 
+    '/lib/video_ctrl.js'
   ]);
 
-// async function doRequest(cache, event) {
-//   let networkResponse = await fetch(event.request);
-//   console.log("fetch completed: " + event.request.url, networkResponse);
-//   if (networkResponse) {
-//     console.debug("updated cached page: " + event.request.url, networkResponse);
-//     cache.put(event.request, networkResponse.clone());
-//   }
-//   return networkResponse;
-// }
-
-// async function cacheFetch(event) {
-//   let cache = null;
-//   try {
-//     cache = await caches.open(CACHE_NAME);
-//   } catch(err) {
-//     console.log('open cache failed ', err);
-//     return err;
-//   }
-  
-//   try {
-//     console.log('cache match');
-//     let resp = await cache.match(event.request);
-//     if(resp) {
-//       return resp;
-//     }
-//   } catch(err) {
-//     console.log('cache match failed ', event.request, err);
-//     //return event.respondWith(err);
-//   }
-
-//   try {
-//     console.log('network fetch');
-//     let networkResp = await doRequest(cache, event);
-//     return networkResp;
-//   } catch(err) {
-//     console.log("Error in fetch()", err);
-//     event.waitUntil(cache.addAll([
-//         // List : cache.addAll(), takes a list of URLs, then fetches them from...
-//         // The server and adds the response to the cache...
-//         './index.html', // cache your index page
-//         './*.js', // cache app.main css
-//         './app.webmanifest',
-//         './images/*'
-//         ])
-//     );
-//   }
-// }
-
-// async function directFetch(event) {
-
-// }
-
-async function onFetch(event) {
-  console.log("onFetch ", JSON.stringify(event.request, null, '\t'));
-  const url = new URL(event.request.url);
-  const isCached = SITE_FILES.has(url.pathname);
-  if(isCached) {
-    let cache = await caches.open(CACHE_NAME);
-    return cache.match(event.request.url);
-  } else {
-    // default go to network
-    return;
-  }
+function log(...args) {
+  console.log(`[SW ${VER}]`, ...args);
 }
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(onFetch(event));
-});
 
 async function doInstall() {
-  try {
-    let cache = await caches.open(CACHE_NAME);
-    cache.addAll(SITE_FILES);
-    console.log("installed")
-  } catch(err) {
-    console.log("install error:", err);
-    throw err;
-  }
+    try {
+        let cache = await caches.open(CACHE_NAME);
+        // let oldkeys = await cache.keys();
+        // console.log('cache before install:', oldkeys);
+        let result = await cache.addAll(SITE_FILES);
+        let keys = await cache.keys();
+        log('cache after install:', keys);
+        return result;
+    } catch(err) {
+        return err;
+    }
+    
 }
-
-self.addEventListener('install', (event) => {
-   event.waitUntil(doInstall());
-   console.log("Latest version installed!");
+self.addEventListener('install', (e) => {
+    log(`Install `, e);
+    e.waitUntil(doInstall());
 });
 
-// self.addEventListener('activate', (e) => {
-//   e.waitUntil(caches.keys().then((keyList) => {
-//     return Promise.all(keyList.map((key) => {
-//       if (key === CACHE_NAME) { return; }
-//       return caches.delete(key);
-//     }))
-//   }));
-// });
+// delete old cache prevent storage leak
+async function doActivate() {
+    try {
+        let names = await caches.keys();
+        for(let name of names) {
+            if(name != CACHE_NAME) {
+                await caches.delete(name);
+                log('deleted old cache '+name);
+            }
+            
+        }
+        return;
+    } catch(err) {
+        return err;
+    }
+}
+
+self.addEventListener('activate', (e) => {
+    log(`Activate `, e);
+    e.waitUntil(doActivate());
+});
+
+async function onFetch(evt) {
+    // console.log("onFetch ", JSON.stringify(evt.request, null, '\t'));
+    let resp = await caches.match(evt.request);
+    if(resp) {
+        log('hit cache ', evt.request.url, resp);
+        return resp;
+    } else {
+        // default go to network
+        log('fetch ', evt.request.url);
+        return fetch(evt.request);
+    }
+}
+self.addEventListener('fetch', (e) => {
+    log(`Fetch `, e);
+    e.respondWith(onFetch(e));
+});
+
+async function handleMessage(client, cmd) {
+    if(cmd.type == "VER") {
+        client.postMessage(JSON.stringify({"type":"VER", "value":VER}));
+    } else if(cmd.type == "SKIP_WAITING") {
+        log("received skipWaiting command");
+        self.skipWaiting();
+    }
+}
+
+self.addEventListener("message", (e) => {
+    let cmd = JSON.parse(e.data);
+    log("received command from navigator:", e);
+    e.waitUntil(handleMessage(e.source, cmd));
+})

@@ -365,7 +365,7 @@ class PlayerUI extends Page {
         this.enterFullscreen();
         
         this.hideControls();
-        this.beginUpdateProgress();
+        // this.beginUpdateProgress();
 
         window.addEventListener('resize', this.boundDebouncerCall);
     }
@@ -381,7 +381,7 @@ class PlayerUI extends Page {
         if(!this.videoCtrl.ended) {
             this.videoCtrl.pause();
         }
-        this.stopUpdateProgress();
+        // this.stopUpdateProgress();
     }
 
     showControls() {
@@ -596,21 +596,40 @@ class PlayerUI extends Page {
         this.popupPlayTime = document.getElementById('div-popup-playtime');
         this.textTimeElapsed = document.getElementById('text-time-elapsed');
         this.textTimeTotal = document.getElementById('text-time-total');
+        this._dragging = false;
 
-        this.rangeProgress.addEventListener('mousemove', (evt) => {
+        this.rangeProgress.addEventListener('pointermove', (evt) => {
+            console.log('pointermove ', evt);
             let pointedTime = this.calculateProgressByPoint(evt);
             let timestr = secondsToHMS(pointedTime);
-            this.popupPlayTime.innerHTML = timestr;
+            this.popupPlayTime.innerHTML = timestr + ' ' + evt.screenX;
 
-            showPopup(this.popupPlayTime, this.rangeProgress, DOCK_TYPE.BOTTOM_TOP, evt.clientX, -2);
+            let vcRect = this.videoContainer.getBoundingClientRect();
+            let ptRect = this.popupPlayTime.getBoundingClientRect();
+            let x = vcRect.left + (vcRect.width - ptRect.width)/2;
+            console.log('show playTime at ', x);
+
+            showPopup(this.popupPlayTime, this.playControls, DOCK_TYPE.BOTTOM_TOP, x, -20);
+            if(this._dragging) {
+                this.videoCtrl.seekTo(pointedTime);
+            }
         });
-        this.rangeProgress.addEventListener('mouseleave', (evt) => {
+        this.rangeProgress.addEventListener('pointerup', (evt) => {
+            console.log('pointerleave ', evt);
             hidePopup(this.popupPlayTime);
+            this._dragging = false;
         });
-        this.rangeProgress.addEventListener('click', (evt) => {
+        this.rangeProgress.addEventListener('pointerdown', (evt) => {
+            this._dragging = true;
+            this.videoCtrl.pause();
+        });
+        this.rangeProgress.addEventListener('pointerover', (evt) => {
+            console.log('pointerover ', evt);
             let pointedTime = this.calculateProgressByPoint(evt);
             console.log('seekTo ', secondsToHMS(pointedTime));
             this.videoCtrl.seekTo(pointedTime);
+            this._dragging = false;
+            this.videoCtrl.play();
         });
     }
 
@@ -642,7 +661,12 @@ class PlayerUI extends Page {
     calculateProgressByPoint(evt) {
         let durationSecs = Math.ceil(this.videoCtrl.duration);
         let maxVal = this.rangeProgress.clientWidth;
-        return Math.round(durationSecs*(evt.offsetX/maxVal));
+        let rect = this.rangeProgress.getBoundingClientRect();
+        let offsetX = evt.pageX - rect.left;
+        if(offsetX < 0) {
+            offsetX = 0;
+        }
+        return Math.round(durationSecs*(offsetX/maxVal));
     }
 
     initBackButton() {
@@ -720,6 +744,14 @@ class PlayerUI extends Page {
                 this.showControls();
             }
         })
+        this.videoCtrl.addEventListener('play', () => {
+            console.log('begin play');
+            this.beginUpdateProgress();
+        });
+        this.videoCtrl.addEventListener('pause', () => {
+            console.log('pause play');
+            this.stopUpdateProgress();
+        });
        this.initVideoRatio();
     }
 
@@ -830,8 +862,60 @@ class PageManager {
 
 var pageMgr = null;
 
+function conformUpdateNow(reg) {
+    if(confirm("Has a new version, do u want update immediatly?")) {
+        reg.installing.postMessage(
+            JSON.stringify({"type":"SKIP_WAITING"}));
+    }
+}
 document.addEventListener('DOMContentLoaded', (event) => {
     console.log('DOM loaded!');
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((reg) => {
+            console.log('Service worker registered -->', reg);
+            if(reg.installing) {
+                reg.installing.onerror = (ev) => {
+                    console.log("Service worker installing error:", ev);
+                }
+                reg.installing.onstatechange = (ev) => {
+                    console.log("Service worker state changed:", ev);
+                }
+                conformUpdateNow(reg);
+            }
+            reg.onupdatefound = (ev) => {
+                console.log("Service worker has a new version:", ev);
+                conformUpdateNow(reg);
+            }
+
+          }, (err) => {
+            console.error('Service worker not registered -->', err);
+          }
+        );
+        navigator.serviceWorker.onmessage = (ev) => {
+            let cmd = JSON.parse(ev.data);
+            console.log("received message from sw:", cmd);
+        }
+        navigator.serviceWorker.onerror = (ev) => {
+            console.log("Service worker occured error:", ev);
+        }
+        let refreshing = false;
+        navigator.serviceWorker.oncontrollerchange = (ev) => {
+            console.log("Service worker changed:", ev);
+            if(refreshing) {
+                return;
+            }
+            refreshing = true;
+            window.location.reload();
+        }
+        navigator.serviceWorker.onmessageerror = (ev) => {
+            console.log("Service worker sent message error:", ev);
+        }
+        console.log('serviceWorker is ', navigator.serviceWorker);
+    } else {
+        console.log("browser doesn't support serviceworker!");
+    }
    
     let playPage = new PlayerUI();
     let mainPage = new MainUI();

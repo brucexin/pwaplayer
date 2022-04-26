@@ -15,12 +15,14 @@
 </body>
 
 <script>
-    var CACHE_NAME = "PWAPLAYER_CACHE_V1";
-    caches.keys().then((keyList) => {
-        Promise.all(keyList.map((key) => {
-            console.log("delete cache ", key);
-            return caches.delete(key);
-        }))
-    });
+    // document.addEventListener('DOMContentLoaded', (event) => {
+    //     var CACHE_NAME = "PWAPLAYER_CACHE_V1";
+    //     caches.keys().then((keyList) => {
+    //         Promise.all(keyList.map((key) => {
+    //             console.log("delete cache ", key);
+    //             return caches.delete(key);
+    //         }))
+    //     });
+    // });
 </script>
 </html>
