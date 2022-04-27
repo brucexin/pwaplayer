@@ -597,21 +597,41 @@ class PlayerUI extends Page {
         this.textTimeElapsed = document.getElementById('text-time-elapsed');
         this.textTimeTotal = document.getElementById('text-time-total');
 
-        this.rangeProgress.addEventListener('mousemove', (evt) => {
-            let pointedTime = this.calculateProgressByPoint(evt);
-            let timestr = secondsToHMS(pointedTime);
-            this.popupPlayTime.innerHTML = timestr;
+        // this.rangeProgress.addEventListener('mousemove', (evt) => {
+        //     console.log('mousemove ', evt);
+        //     let pointedTime = this.calculateProgressByPoint(evt);
+        //     let timestr = secondsToHMS(pointedTime);
+        //     this.popupPlayTime.innerHTML = timestr;
 
-            showPopup(this.popupPlayTime, this.rangeProgress, DOCK_TYPE.BOTTOM_TOP, evt.clientX, -2);
+        //     showPopup(this.popupPlayTime, this.rangeProgress, DOCK_TYPE.BOTTOM_TOP, evt.clientX, -2);
+        // });
+        // this.rangeProgress.addEventListener('mouseleave', (evt) => {
+        //     hidePopup(this.popupPlayTime);
+        // });
+        // this.rangeProgress.addEventListener('click', (evt) => {
+        //     console.log('click at ', evt);
+        //     let pointedTime = this.calculateProgressByPoint(evt);
+        //     console.log('seekTo ', secondsToHMS(pointedTime));
+        //     this.videoCtrl.seekTo(pointedTime);
+        // });
+        this._progressDragged = false;
+        this.rangeProgress.addEventListener('pointerdown', (evt) => {
+            this._progressDragged = true;
+            this.videoCtrl.pause();
         });
-        this.rangeProgress.addEventListener('mouseleave', (evt) => {
-            hidePopup(this.popupPlayTime);
+        this.rangeProgress.addEventListener('pointerup', (evt) => {
+            this._progressDragged = false;
+            this.videoCtrl.play();
         });
-        this.rangeProgress.addEventListener('click', (evt) => {
-            let pointedTime = this.calculateProgressByPoint(evt);
-            console.log('seekTo ', secondsToHMS(pointedTime));
-            this.videoCtrl.seekTo(pointedTime);
-        });
+        this._onProgressInput = (evt) => {
+            console.log('progress changed ', evt, this.rangeProgress.value);
+            let seconds = parseInt(this.rangeProgress.value);
+            this.videoCtrl.seekTo(seconds);
+        };
+        this._progressDebouncer = new SimpleDebouncer(this._onProgressInput, 70);
+        this.boundProgressCall = this._progressDebouncer.call.bind(this._progressDebouncer);
+
+        this.rangeProgress.addEventListener('input', this.boundProgressCall);
     }
 
     updateProgress() {
@@ -640,6 +660,9 @@ class PlayerUI extends Page {
     }
 
     calculateProgressByPoint(evt) {
+        // Todo: calcuate error, need fix.
+        // Valid rangeProgress width is 
+        //   rangeProgress.clientWidth - input[type="range"]::-webkit-slider-thumb.width
         let durationSecs = Math.ceil(this.videoCtrl.duration);
         let maxVal = this.rangeProgress.clientWidth;
         return Math.round(durationSecs*(evt.offsetX/maxVal));
