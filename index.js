@@ -352,8 +352,11 @@ class SBSVideoView {
 class PlayerUI extends Page {
     MODE_NORMAL = 'normal';
     MODE_SBS = 'sbs';
+    SETTINGS_VER = '0.0.2';
+    SETTINGS_NAME = 'player_settings';
     constructor() {
         super(document.getElementById("page-player"), 'hidden-display');
+        
         this.playControls = document.getElementById('div-play-controls');
         this.controlsShowed = false;
 
@@ -361,6 +364,8 @@ class PlayerUI extends Page {
         this.boundDebouncerCall = this.resizeDebouncer.call.bind(this.resizeDebouncer);
 
        this.popupGroup = new PopupGroup();
+
+       this.initSavedSettings();
 
        this.initVideo();
 
@@ -395,6 +400,54 @@ class PlayerUI extends Page {
             this.videoCtrl.pause();
         }
         // this.stopUpdateProgress();
+    }
+
+    initSavedSettings() {
+        let loadedSettingsStr = localStorage.getItem('settings');
+        let loadedSettings  = null;
+        if(loadedSettingsStr) {
+            loadedSettings = JSON.parse(loadedSettingsStr);
+        }
+        if(loadedSettings && loadedSettings['type'] != this.SETTINGS_NAME) {
+            console.log('invalid settings item be found, reset it!', loadedSettings);
+            loadedSettings = null;
+        } 
+        if(loadedSettings && loadedSettings['ver'] == this.SETTINGS_VER) {
+            console.log('Valid settings item be found, use it!', 
+                loadedSettings);
+            this._savedSettings = loadedSettings;
+        } else {
+            this._savedSettings = {
+                'ver':this.SETTINGS_VER,
+                'type':this.SETTINGS_NAME
+            };
+            this._savedSettings['view'] = {
+                'rangeSize': {
+                    'max': "20",
+                    'min': "10",
+                    'val': "20"
+                },
+                'rangeHPos': {
+                    'max': "10",
+                    'min': "0",
+                    'val': "0"
+                },
+                'rangeVPos': {
+                    'max': "10",
+                    'min': "0",
+                    'val': "5"
+                }
+            }
+        }
+        this._oldSettingsStr = loadedSettingsStr;
+        this._savedSettingsTimer = setTimeout(() => {
+            let settingsStr = JSON.stringify(this._savedSettings);
+            if(this._oldSettingsStr != settingsStr) {
+                console.log('settings changed, save it');
+                localStorage.setItem('settings', settingsStr);
+                this._oldSettingsStr = settingsStr;
+            }
+        }, 60*1000);
     }
 
     showControls() {
@@ -458,8 +511,23 @@ class PlayerUI extends Page {
         this.rangeSBSViewSize = document.getElementById('range-SBSViewSize');
         this.rangeSBSHPos = document.getElementById('range-SBSHPos');
         this.rangeSBSVPos = document.getElementById('range-SBSVPos');
+        this.divSBSOnlySettings = document.getElementById('div-sbsonly-settings');
         this.spViewMode = new SharePlaceGroup([this.btnVRMode, this.btnNormalMode], 
             "hidden-display");
+
+        let settings = this._savedSettings['view'];
+        if(settings) {
+            this.rangeSBSViewSize.max = settings['rangeSize'].max;
+            this.rangeSBSViewSize.min = settings['rangeSize'].min;
+            this.rangeSBSViewSize.value = settings['rangeSize'].value;
+            this.rangeSBSHPos.max = settings['rangeHPos'].max;
+            this.rangeSBSHPos.min = settings['rangeHPos'].min;
+            this.rangeSBSHPos.value = settings['rangeHPos'].value;
+            this.rangeSBSVPos.max = settings['rangeVPos'].max;
+            this.rangeSBSVPos.min = settings['rangeVPos'].min;
+            this.rangeSBSVPos.value = settings['rangeVPos'].value;
+        }
+        
 
         // this.videoView = new NormalVideoView(this.videoContainer, 
         //     this._vcPaddingWidth,
@@ -490,12 +558,15 @@ class PlayerUI extends Page {
         this.rangeSBSViewSize.addEventListener('change', () => {
             // this._adjustVideoSize();
             this.videoView.update(this.videoCtrl);
+            settings['rangeSize'].value = this.rangeSBSViewSize.value;
         });
         this.rangeSBSHPos.addEventListener('change', () => {
             this.videoView.update(this.videoCtrl);
+            settings['rangeHPos'].value = this.rangeSBSHPos.value;
         });
         this.rangeSBSVPos.addEventListener('change', () => {
             this.videoView.update(this.videoCtrl);
+            settings['rangeVPos'].value = this.rangeSBSVPos.value;
         });
     }
 
@@ -823,6 +894,12 @@ class PlayerUI extends Page {
             this.rangeSBSVPos,
             this.rangeSBSHPos);
 
+        // this.rangeSBSHPos.className = removeWord('hidden-display', 
+        //     this.rangeSBSHPos.className);
+        // this.rangeSBSVPos.className = removeWord('hidden-display', 
+        //     this.rangeSBSVPos.className);
+        this.divSBSOnlySettings.className = removeWord('hidden-display', 
+            this.divSBSOnlySettings.className);
       }
 
       showNormalVideo() {
@@ -840,6 +917,12 @@ class PlayerUI extends Page {
             this._vcBorderWidth,
             this.rangeSBSViewSize);
 
+        // this.rangeSBSHPos.className = addWord('hidden-display', 
+        //     this.rangeSBSHPos.className);
+        // this.rangeSBSVPos.className = addWord('hidden-display', 
+        //     this.rangeSBSVPos.className);
+        this.divSBSOnlySettings.className = addWord('hidden-display', 
+            this.divSBSOnlySettings.className);
       }
 
 
