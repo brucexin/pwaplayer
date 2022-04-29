@@ -1,4 +1,4 @@
-var VER = "0.1.4"
+var VER = "0.1.6"
 var CACHE_NAME = "PWAPLAYER_CACHE_"+VER;
 SITE_FILES = new Set(['./index.html',
     '/index.js',

@@ -144,10 +144,11 @@ class MainUI extends Page {
 }
 
 class NormalVideoView {
-    constructor(videoContainer, vcPaddingWidth, vcBorderWidth) {
+    constructor(videoContainer, vcPaddingWidth, vcBorderWidth, rangeSBSViewSize) {
         this.videoContainer = videoContainer;
         this.vcPaddingWidth = vcPaddingWidth;
         this.vcBorderWidth = vcBorderWidth;
+        this.rangeSBSViewSize = rangeSBSViewSize;
     }
 
     update(videoCtrl) {
@@ -167,6 +168,17 @@ class NormalVideoView {
             this._fitScreenSize(video, vcSize, videoCtrl.width, videoCtrl.height);
         }
     }
+
+    _calcVideoSize(width, height) {
+        let valueViewSize = parseIntWithDefault(this.rangeSBSViewSize.value, 1);
+        let valueMaxViewSize = parseInt(this.rangeSBSViewSize.max);
+        let scaleViewSize = valueViewSize/valueMaxViewSize;
+        let viewWidth = width * scaleViewSize;
+        let viewHeight = height * scaleViewSize;
+
+        console.log("scale ", valueMaxViewSize, valueViewSize, scaleViewSize);
+        return [viewWidth, viewHeight];
+      }
 
     _keepVideoSize(video, vcSize, videoWidth, videoHeight) {
         // let cwidth = vcSize[0] + 'px';
@@ -205,8 +217,9 @@ class NormalVideoView {
       }
 
       _drawVideo(video, width, height) {
-        video.style.width = width + 'px';
-        video.style.height = height + 'px';
+        let newVideoSize = this._calcVideoSize(width, height);
+        video.style.width = newVideoSize[0] + 'px';
+        video.style.height = newVideoSize[1] + 'px';
         video.style.paddingLeft = '0px';
         video.style.paddingRight = '0px';
       }
@@ -448,9 +461,11 @@ class PlayerUI extends Page {
         this.spViewMode = new SharePlaceGroup([this.btnVRMode, this.btnNormalMode], 
             "hidden-display");
 
-        this.videoView = new NormalVideoView(this.videoContainer, 
-            this._vcPaddingWidth,
-            this._vcBorderWidth);
+        // this.videoView = new NormalVideoView(this.videoContainer, 
+        //     this._vcPaddingWidth,
+        //     this._vcBorderWidth,
+        //     this.rangeSBSViewSize);
+        this.showNormalVideo();
 
         this.spViewMode.disableAll()
         this.spViewMode.updateTo(this.btnVRMode);
@@ -822,7 +837,8 @@ class PlayerUI extends Page {
 
           this.videoView = new NormalVideoView(this.videoContainer, 
             this._vcPaddingWidth,
-            this._vcBorderWidth);
+            this._vcBorderWidth,
+            this.rangeSBSViewSize);
 
       }
 
