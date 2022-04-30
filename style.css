@@ -328,6 +328,7 @@ html, body {
   
   input[type="range"] {
     padding: 0;
+    width: 95%;
   }
 
   input[type="range"]:disabled {
@@ -404,4 +405,10 @@ html, body {
   
   .hidden-display {
     display: none;
+}
+
+
+.seperate-line {
+  height: 1rem;
+  width: 100%;
 }
