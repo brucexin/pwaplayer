@@ -972,9 +972,8 @@ function conformUpdateNow(reg) {
             JSON.stringify({"type":"SKIP_WAITING"}));
     }
 }
-document.addEventListener('DOMContentLoaded', (event) => {
-    console.log('DOM loaded!');
 
+function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js', {scope: './'})
           .then((reg) => {
@@ -1020,7 +1019,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     } else {
         console.log("browser doesn't support serviceworker!");
     }
-   
+}
+document.addEventListener('DOMContentLoaded', (event) => {
+    console.log('DOM loaded!');
+    registerServiceWorker();
     let playPage = new PlayerUI();
     let mainPage = new MainUI();
 
