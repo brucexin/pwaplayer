@@ -1,14 +1,14 @@
-var VER = "0.1.18"
+var VER = "0.1.20"
 var CACHE_NAME = "PWAPLAYER_CACHE_"+VER;
 SITE_FILES = new Set(['./index.html',
-    '/index.js',
-    '/app.webmanifest',
-    '/images/icon.png',
-    '/lib/ui_popup.js', 
-    '/lib/ui_share_place.js', 
-    '/lib/utils.js', 
-    '/lib/video_ctrl.js',
-    '/style.css'
+    './index.js',
+    './app.webmanifest',
+    './images/icon.png',
+    './lib/ui_popup.js', 
+    './lib/ui_share_place.js', 
+    './lib/utils.js', 
+    './lib/video_ctrl.js',
+    './style.css'
   ]);
 
 function log(...args) {
