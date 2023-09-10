@@ -1,4 +1,4 @@
-var VER = "0.1.22"
+var VER = "0.1.44"
 var CACHE_NAME = "PWAPLAYER_CACHE_"+VER;
 SITE_FILES = new Set(['./index.html',
     './index.js',
@@ -7,7 +7,17 @@ SITE_FILES = new Set(['./index.html',
     './lib/ui_popup.js', 
     './lib/ui_share_place.js', 
     './lib/utils.js', 
-    './lib/video_ctrl.js',
+    './lib/h5_video_ctrl.js',
+    './lib/wp_video_ctrl.js',
+    './wasm_player/player_backend.js',
+    './wasm_player/webgl_renderer.js',
+    './wasm_player/graphsubtitle_renderer.js',
+    './wasm_player/wasmplay.js',
+    './wasm_player/wasmplay.worker.js',
+    './wasm_player/wasmplay.wasm',
+    './wasm_player/ass.js/ass.js',
+    './wasm_player/ass.js/htmlrenderer.js',
+    './wasm_player/ass.js/interpolating.js',
     './style.css'
   ]);
 

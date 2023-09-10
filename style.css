@@ -153,6 +153,7 @@ html, body {
     padding: 1vh 1vh;
     background-color: rgba(51, 51, 51, 0.746);
     border-radius: 4px;
+    z-index: 100;
   }
 
   .large-controls {
@@ -174,11 +175,16 @@ html, body {
       padding: 1vh 1vh;
   }
 
+  .popup {
+    background-color: rgba(51, 51, 51, 0.9);
+    border-radius: 4px;
+  }
+
   .popup-settings {
     width: 25%;
     height: fit-content;
-    background-color: rgba(51, 51, 51, 0.431);
-    border-radius: 4px;
+    /* background-color: rgba(51, 51, 51, 0.431);
+    border-radius: 4px; */
 
     position:fixed;
     visibility: hidden;
@@ -191,8 +197,8 @@ html, body {
 
   .popup-playrate {
     width: auto;
-    background-color: rgba(51, 51, 51, 0.431);
-    border-radius: 4px;
+    /* background-color: rgba(51, 51, 51, 0.431);
+    border-radius: 4px; */
 
     position:fixed;
     visibility: hidden;
@@ -213,15 +219,78 @@ html, body {
     text-align:right;
   }
 
-  /* .radio-label {
-
-  } */
-
   .radio-playrate:checked + .label-playrate {
     border: 1px solid;
     border-radius: 1px;
     background-color: rgba(51, 51, 51, 0.746);
   }
+
+  /* .radio-label {
+
+  } */
+
+  .popup-streams {
+    /* width: auto; */
+    /* background-color: rgba(51, 51, 51, 0.431);
+    border-radius: 4px; */
+
+    position:fixed;
+    visibility: hidden;
+
+    display: flex;
+    align-items:center;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  #div-streams-selector {
+    display: flex;
+    align-items:center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .stream-selector {
+    /* it scrollable when there are too many items, but don't show scrollbar when items not overflow */
+    overflow-y: auto;
+    /* overflow-y: scroll; */
+    /* width: 50%; */
+  }
+
+  .audio-selector-item, .subtitle-selector-item {
+    margin: 0.3rem 0.3rem;
+  }
+
+  .label-streams {
+    display: block;
+    font-size: 1rem;
+    /* margin: 0.1rem 0.1rem; */
+    color: whitesmoke;
+    /* width: 90%; */
+    text-align:right;
+  }
+
+  .label-streams:hover {
+    /* background-color: rgba(66, 63, 63, 0.431); */
+    background-color: rgba(128, 123, 123, 0.431);
+  
+  }  
+
+  .radio-streams:checked + .label-streams {
+    border: 1px solid;
+    border-radius: 1px;
+    background-color: rgba(51, 51, 51, 0.746);
+  }
+
+  .popup-button {
+    color: #d5d5d3;
+    font-size: 0.8rem;
+    cursor: pointer;
+    background-color: rgba(128, 123, 123, 0.431);
+  }
+  
 
   .progress-controls {
     display: flex;
@@ -410,6 +479,9 @@ html, body {
 
 
 .seperate-line {
-  height: 0.2rem;
-  width: 100%;
+  width: 0.2rem;
+  height: 100%;
+  padding: 0px 5px;
+  border: #D5D5D3;
+  /* color: #D5D5D3; */
 }

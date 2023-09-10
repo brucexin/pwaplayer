@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<title>wasmplay demo/test</title>
+    <script type="module" src="./index.js"></script>
+	<script src="./ass.js/interpolating.js"></script>
+	<script src="./ass.js/ass.js"></script>
+	<script type="module" src="./test_ass.js"></script>
+	<style>
+		.streams-container {
+			/* position:fixed; */
+
+			display: flex;
+			align-items:center;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			justify-content: space-between;
+		}
+
+		.stream-selector {
+			/* it scrollable when there are too many items, but don't show scrollbar when items not overflow */
+			overflow-y: auto;
+			/* overflow-y: scroll; */
+			/* width: 50%; */
+		}
+
+
+	</style>
+</head>
+<body>
+	<div>
+		<input id="file-input" type="file" />
+		<button id="btn-play">play</button>
+		<button id="btn-pause" disabled>pause</button>
+		<button id="btn-end" disabled>end</button>
+		<input id="sbsmode-input" type="checkbox" />
+		<label for="sbsmode-input">SBS Mode</label>
+	</div>
+	<div class="streams-container">
+		<div class="stream-selector">
+			<label for="audio-select">Choose audio:</label>
+			<select name="audio" id="audio-select">
+				<!-- <option value="">--Please choose an audio--</option> -->
+			</select>
+		</div>
+		<div class="stream-selector">
+			<label for="subtitle-select">Choose subtitle:</label>
+			<select name="subtitle" id="subtitle-select">
+				<!-- <option value="">--Please choose a subtitle--</option> -->
+			</select>
+		</div>
+		<button id="btn-streamselect-apply" class="popup-button">Apply</button>
+	</div>
+	<div>
+		<label>Subtitle:</label><input id="subtitle-input" type="file" multiple/>
+	</div>
+	<div>
+		<label>seek to:</label><input type="range" id="input-playtime" style="width:480px" min="0" max="100" value="0" step="any"/>
+		<label id="label-playtime">00:00:00</label>
+	</div>
+	<div>
+		<label>volume:</label><input type="range" id="input-volume" style="width:100px" min="0" max="10" value="10" step="1"/>
+	</div>
+	<div>
+		<div>
+			<canvas id="main" width="640px" height="480px" style="background:green"></canvas>
+		</div>
+		<div>
+			<input id="bg-input"  type="file">set background</input>
+		</div>
+		<div id="div_pts"><h2 id="h2_pts"></h2></div>
+		<div>
+			Frames:<h2 id="span_frames_count"></h2>
+		</div>
+		<div>
+			FPS:<h2 id="h2_fps"></h2>
+		</div>
+		
+	</div>
+	<textarea id="textarea-metadata" readonly>
+		
+	</textarea>
+	<div id="div-subtitle-m" style="height:fit-content;width:fit-content;background-color: brown;"></div>
+</body>
+</html>
+	

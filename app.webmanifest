@@ -1,7 +1,7 @@
 {
   "short_name": "PWAPlayer",
   "name": "PWAPlayer",
-  "description": "A html video player package to PWA",
+  "description": "A html video player use PWA style, it can run at offline!",
   "scope": "/",
   "icons": [
     {

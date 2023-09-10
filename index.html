@@ -75,13 +75,12 @@
       </div>
       <input id="input-video-file" class="hidden-display" type="file" accept="video/*"/>
       <input id="input-subtitle-file" class="hidden-display" type="file" accept="text/vtt"/>
-    </div>
   </div>
   
   
   <div id="page-player" class="video-player">
       <div id="div-video" class="video-container">
-          <video id="video-main" class="video-fit-use-js">
+          <!-- <video id="video-main" class="video-fit-use-js"> -->
       </div>
 
       <div id="div-back-main" class="back-control">
@@ -261,7 +260,7 @@
                   </svg>
               </button>
 
-              <button id="btn-caption" class="">
+              <button id="btn-streamselector" class="">
                   <svg xmlns:dc="http://purl.org/dc/elements/1.1/"
                       xmlns:cc="http://creativecommons.org/ns#"
                       xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -300,14 +299,13 @@
                       </g>
                   </svg>
               </button>
-            
           </div>
         </div>
         
         <div class="progress-controls">
           <span id="text-time-elapsed" class="time-elapsed">00:00:00</span>
           <input id="range-progress" type="range" min="0" max="100" value="20">
-          <span id="text-time-total" class="time-remaining">01:14:26</span>
+          <span id="text-time-total" class="time-remaining">00:00:00</span>
         </div>
 
         <div  id="div-popup-playtime"  class="popup-playtime">
@@ -316,7 +314,7 @@
             </label>
         </div>
 
-        <div id="div-popup-settings" class="popup-settings">
+        <div id="div-popup-settings" class="popup popup-settings">
           <div>
             <label class="time-elapsed">size</label>
             <input type="range" id="range-SBSViewSize" name="SBSSize" min="10" max="20" value="20">
@@ -335,7 +333,7 @@
           </div>
         </div>
 
-        <div id="div-popup-playrate" class="popup-playrate">
+        <div id="div-popup-playrate" class="popup popup-playrate">
           <input type="radio" name="radio-playrate" id="radio-playrate-2x" value="2x" class="hidden-display radio-playrate" />
           <label for="radio-playrate-2x" class="label-playrate">2x
             
@@ -353,10 +351,31 @@
               
           </label>
         </div>
-        
+
+        <div id="div-popup-streams" class="popup popup-streams">
+          <div id="div-streams-selector">
+            <div id="div-audio-selector" class="stream-selector">
+                <div id="div-audio-selector-item-template" class="audio-selector-item">
+                <input type="radio" id="radio-audio-" name="radio-audio" value="template" class="hidden-display radio-streams" />
+                <label for="label-audio-" class="label-streams"></label>
+                </div>
+            </div> 
+            <!-- add a seperate line between two columns -->
+            <div class="div-seperate-line"></div>
+            <div id="div-subtitle-selector" class="stream-selector">
+                <button id="btn-open-subtitlefile" class="popup-button">Load subtitle from file ...</button>
+                <div id="div-subtitle-selector-item-template" class="subtitle-selector-item">
+                    <input type="radio" id="radio-subtitle-"  name="radio-subtitle" value="template" class="hidden-display radio-streams" />
+                    <label for="radio-subtitle-"  class="label-streams"></label>
+                </div>
+            </div>
+          </div>
+          <button id="btn-streamselect-apply" class="popup-button">Apply</button>
+        </div>
+           
         
       </div>
-      </div>
+    </div>
   </div>
 </body>
 
