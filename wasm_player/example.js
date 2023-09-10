@@ -1,5 +1,5 @@
-import {secondsToHMS} from "./lib/utils.js";
-import {DOCK_TYPE, showPopup, hidePopup} from "./lib/ui_popup.js";
+import {secondsToHMS} from "../lib/utils.js";
+import {DOCK_TYPE, showPopup, hidePopup} from "../lib/ui_popup.js";
 import {default as backend} from "./player_backend.js";
 
 let _BE = null;

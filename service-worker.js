@@ -1,4 +1,4 @@
-var VER = "0.1.44"
+var VER = "0.1.47"
 var CACHE_NAME = "PWAPLAYER_CACHE_"+VER;
 SITE_FILES = new Set(['./index.html',
     './index.js',
@@ -18,7 +18,8 @@ SITE_FILES = new Set(['./index.html',
     './wasm_player/ass.js/ass.js',
     './wasm_player/ass.js/htmlrenderer.js',
     './wasm_player/ass.js/interpolating.js',
-    './style.css'
+    './style.css',
+    './iso_639-2.min.json'
   ]);
 
 function log(...args) {
@@ -67,17 +68,45 @@ self.addEventListener('activate', (e) => {
 });
 
 async function onFetch(evt) {
+    let request = evt.request;
     // console.log("onFetch ", JSON.stringify(evt.request, null, '\t'));
-    let resp = await caches.match(evt.request);
+    let resp = await caches.match(request);
     if(resp) {
-        log('hit cache ', evt.request.url, resp);
-        return resp;
+        log('hit cache ', request.url, resp);
+        // return resp;
     } else {
         // default go to network
-        log('fetch ', evt.request.url);
-        return fetch(evt.request);
+        log('fetch ', request.url);
+        if(request.mode === "no-cors") { // We need to set `credentials` to "omit" for no-cors requests, per this comment: https://bugs.chromium.org/p/chromium/issues/detail?id=1309901#c7
+            request = new Request(request.url, {
+              cache: request.cache,
+              credentials: "omit",
+              headers: request.headers,
+              integrity: request.integrity,
+              destination: request.destination,
+              keepalive: request.keepalive,
+              method: request.method,
+              mode: request.mode,
+              redirect: request.redirect,
+              referrer: request.referrer,
+              referrerPolicy: request.referrerPolicy,
+              signal: request.signal,
+            });
+          }
+        resp =  await fetch(request);
     }
+    if(resp.status === 0) {
+        return resp;
+    }
+  
+    const headers = new Headers(resp.headers);
+    headers.set("Cross-Origin-Embedder-Policy", "require-corp"); // or: require-corp
+    headers.set("Cross-Origin-Opener-Policy", "same-origin");
+    
+    return new Response(resp.body, { status: resp.status, statusText: resp.statusText, headers });
+    // return resp;
 }
+
 self.addEventListener('fetch', (e) => {
     log(`Fetch `, e);
     e.respondWith(onFetch(e));

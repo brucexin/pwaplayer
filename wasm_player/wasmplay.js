@@ -51,9 +51,7 @@ if (ENVIRONMENT_IS_NODE) {
  if (ENVIRONMENT_IS_WORKER) {
   scriptDirectory = nodePath.dirname(scriptDirectory) + "/";
  } else {
-  const path = require('path');
-  scriptDirectory = path.resolve(__dirname, './');
-  //scriptDirectory = require("url").fileURLToPath(new URL("./", import.meta.url));
+  scriptDirectory = require("url").fileURLToPath(new URL("./", import.meta.url));
  }
  read_ = (filename, binary) => {
   filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
