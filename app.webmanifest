@@ -32,9 +32,9 @@
 "file_handlers": [
     {
       "action": "/open-video",
-      "accept": [
-        "video/*"
-      ],
+      "accept": {
+        "video/*":[".mp4",".mkv",".avi*,".mov",".webm",".vob",".mpg"]
+      },
       "launch_type": "multiple-clients"
     }
 ],
