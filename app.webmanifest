@@ -20,7 +20,7 @@
 "theme_color": "#1565c0",
 "start_url": "./index.html",
 "display": "fullscreen",
-"display_override": "display_override": [
+"display_override": [
   "window-controls-overlay",
   "standalone",
   "browser"
