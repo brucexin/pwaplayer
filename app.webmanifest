@@ -1,19 +1,54 @@
 {
-  "short_name": "PWAPlayer",
-  "name": "PWAPlayer",
-  "description": "A html video player use PWA style, it can run at offline!",
-  "scope": "/",
-  "icons": [
+"id": "pwaplayer",
+"short_name": "PWAPlayer",
+"name": "PWAPlayer",
+"description": "A html video player use PWA style, it play local video file like native desktop player!",
+"categories": [
+  "entertainment",
+  "musicAndVideo"
+],
+"scope": "/",
+"icons": [
+  {
+    "src": "./images/icon.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }
+  
+],
+"background_color": "#EEE",
+"theme_color": "#1565c0",
+"start_url": "./index.html",
+"display": "standalone",
+"display_override": ["fullscreen", "minimal-ui", "browser"],
+"orientation": "any",
+"launch_handler": {
+  "client_mode": ["focus-existing", "auto"]
+},
+"file_handlers": {
+  "allow": [
     {
-      "src": "./images/icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "action": "open",
+      "accept": [
+        "video/*"
+      ]
     }
-    
-  ],
-  "background_color": "#EEE",
-  "theme_color": "#1565c0",
-  "start_url": "./index.html",
-  "display": "fullscreen",
-  "orientation": "any"
+  ]
+},
+"screenshot": [
+  {
+    "src": "./ss_main.png",
+    "sizes": "1280x720",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "Homescreen of PWAPlayer App"
+  },
+  {
+    "src": "./ss_play.png",
+    "sizes": "2180x1339",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "UI of PWAPlayer playing"
+  }
+]
 }
