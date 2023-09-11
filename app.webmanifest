@@ -35,16 +35,16 @@
     }
   ]
 },
-"screenshot": [
+"screenshots": [
   {
-    "src": "./ss_main.png",
+    "src": "./images/ss_main.png",
     "sizes": "1280x720",
     "type": "image/png",
     "form_factor": "wide",
     "label": "Homescreen of PWAPlayer App"
   },
   {
-    "src": "./ss_play.png",
+    "src": "./images/ss_play.png",
     "sizes": "2180x1339",
     "type": "image/png",
     "form_factor": "wide",
