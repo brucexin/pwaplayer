@@ -40,14 +40,14 @@
     "src": "./images/ss_main.png",
     "sizes": "1280x720",
     "type": "image/png",
-    "form_factor": "wide",
+    "platform": "wide",
     "label": "Homescreen of PWAPlayer App"
   },
   {
     "src": "./images/ss_play.png",
     "sizes": "2180x1339",
     "type": "image/png",
-    "form_factor": "wide",
+    "platform": "wide",
     "label": "UI of PWAPlayer playing"
   }
 ]
