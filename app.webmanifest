@@ -31,9 +31,18 @@
 },
 "file_handlers": [
     {
-      "action": "/open-video",
+      "action": "/open-video/",
       "accept": {
         "video/*":[".mp4",".mkv",".avi",".mov",".webm",".vob",".mpg"]
+      },
+      "launch_type": "multiple-clients"
+    },
+    {
+      "action": "/open-gpx/",
+      "accept": {
+        "text/xml": [
+                    ".gpx"
+                ]
       },
       "launch_type": "multiple-clients"
     }
